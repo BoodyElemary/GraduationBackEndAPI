@@ -3,5 +3,5 @@ const path = require("path");
 const notFoundRoute = require(path.join(__dirname, "not-found.routes"));
 const router = express.Router();
 
-router.route("*", notFoundRoute);
+router.use("*", notFoundRoute);
 module.exports = router;

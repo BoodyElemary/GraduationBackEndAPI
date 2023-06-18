@@ -8,43 +8,52 @@ const passwordHandle = require(path.join(
   'password-handle',
 ));
 
-const customerSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true,
-    index: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  voucherList: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'Voucher',
+const customerSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      required: true,
       trim: true,
     },
-  ],
-  isActive: {
-    type: Boolean,
-    required: true,
-    default: false,
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    voucherList: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Voucher',
+      },
+    ],
+    isActive: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    userOrders: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+      },
+    ],
   },
-});
+
+  { timestamps: true },
+);
 
 customerSchema.pre('save', async () => {
   if (this.isNew || this.isModified('password'))

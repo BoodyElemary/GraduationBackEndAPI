@@ -8,7 +8,7 @@ const adminSchema = new mongoose.Schema(
     fullName: {
       type: String,
       trim: true,
-      require: true,
+      required: true,
       unique: true,
       index: true,
     },

@@ -7,8 +7,9 @@ const productSchema = new mongoose.Schema(
       required: true
     },
     price: {
-      type: Schema.Types.Float,
+      type: Number,
       required: true,
+      min: 0.01
     },
     picture: {
       type: String,

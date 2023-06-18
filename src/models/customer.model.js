@@ -8,7 +8,7 @@ const passwordHandle = require(path.join(
   'password-handle',
 ));
 
-const userSchema = new mongoose.Schema({
+const customerSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: true,
@@ -39,9 +39,14 @@ const userSchema = new mongoose.Schema({
       trim: true,
     },
   ],
+  isActive: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 });
 
-userSchema.pre('save', async () => {
+customerSchema.pre('save', async () => {
   if (this.isNew || this.isModified('password'))
     try {
       this.password = await passwordHandle.hash(this.password);
@@ -51,4 +56,4 @@ userSchema.pre('save', async () => {
   next();
 });
 
-mongoose.model('Customer', userSchema);
+mongoose.model('Customer', customerSchema);

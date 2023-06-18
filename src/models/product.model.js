@@ -16,7 +16,9 @@ const productSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      required: true
+      required: true,
+      enum: ['available', 'unavailable'],
+      default: 'available',
     },
     details: {
       prief: {
@@ -35,11 +37,11 @@ const productSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref:"category"
+      ref:"Category"
     }
   },
   { timestamps: true }
 );
 
-const productModel = mongoose.model("product", productSchema)
+const productModel = mongoose.model("Product", productSchema)
 module.exports = productModel

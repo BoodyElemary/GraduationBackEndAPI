@@ -34,12 +34,13 @@ const createOrder = async (req, res) => {
       flavorPrice = await FlavorModel.findById(drink.flavor).price;
       toppingsPrice = drink.toppings.reduce(
         async (prev, curr) =>
-          prev + (await ToppingModel.findById(curr.topping).price) * curr.quantity,
+          prev +
+          (await ToppingModel.findById(curr.topping).price) * curr.quantity,
         0
       );
       totalPrice += basePrice + flavorPrice + toppingsPrice;
     });
-
+    let test = 0;
     const savedOrder = await order.save();
 
     res.status(201).json(savedOrder);

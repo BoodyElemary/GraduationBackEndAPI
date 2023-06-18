@@ -14,5 +14,5 @@ const flavorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const flavorModel = mongoose.model("flavor", flavorSchema)
+const flavorModel = mongoose.model("Flavor", flavorSchema)
 module.exports = flavorModel

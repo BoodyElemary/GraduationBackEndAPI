@@ -8,8 +8,9 @@ const baseSchema = new mongoose.Schema(
       unique: true,
     },
     price: {
-      type: Schema.Types.Float,
+      type: Number,
       required: true,
+      min: 0.01
     },
     picture: {
         type: String,
@@ -19,5 +20,5 @@ const baseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const baseModel = mongoose.model("base", baseSchema)
+const baseModel = mongoose.model("Base", baseSchema)
 module.exports = baseModel

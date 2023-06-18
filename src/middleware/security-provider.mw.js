@@ -41,7 +41,7 @@ const allowedCountries = ["US", "CA", "MX", "EG", "localhost"];
 
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 60, // limit each IP to 60 requests per minute
+  max: 100, // limit each IP to 60 requests per minute
 });
 
 module.exports = [

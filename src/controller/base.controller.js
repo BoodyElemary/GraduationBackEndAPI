@@ -1,4 +1,5 @@
-const baseModel = require('../models/base.model')
+const path = require('path');
+const baseModel = require(path.join(__dirname, "..", "models", "base.model"))
 
 class baseController{
 

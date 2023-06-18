@@ -1,5 +1,6 @@
 const express = require('express')
-const flavorController = require('../controller/flavor.controller')
+const path = require('path');
+const flavorController = require(path.join(__dirname, "..", "controller", "flavor.controller"))
 const Router = express.Router({mergeParams:true})
 
 Router.get('/', flavorController.index)

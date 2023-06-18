@@ -37,7 +37,6 @@ const customerSchema = new mongoose.Schema(
       {
         type: Schema.Types.ObjectId,
         ref: 'Voucher',
-        trim: true,
       },
     ],
     isActive: {
@@ -45,7 +44,14 @@ const customerSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    userOrders: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+      },
+    ],
   },
+
   { timestamps: true },
 );
 

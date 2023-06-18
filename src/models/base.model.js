@@ -19,5 +19,5 @@ const baseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const baseModel = mongoose.model("base", baseSchema)
+const baseModel = mongoose.model("Base", baseSchema)
 module.exports = baseModel

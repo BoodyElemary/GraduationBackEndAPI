@@ -1,22 +1,24 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const toppingSchema = new mongoose.Schema(
   {
-    name: {
+    type: {
       type: String,
-      required: true
+      required: true,
     },
     price: {
       type: Schema.Types.Float,
       required: true,
     },
-    type: {
-      type: String,
-      required: true
-    }
+    toppings: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const toppingModel = mongoose.model("topping", toppingSchema)
-module.exports = toppingModel
+const toppingModel = mongoose.model('Topping', toppingSchema);
+module.exports = toppingModel;

@@ -4,16 +4,17 @@ const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     price: {
       type: Number,
+      float: true,
       required: true,
       min: 0.01
     },
     picture: {
       type: String,
-      required: true
+      required: true,
     },
     status: {
       type: String,
@@ -22,18 +23,18 @@ const productSchema = new mongoose.Schema(
       default: 'available',
     },
     details: {
-      prief: {
+      brief: {
         type: String,
-        required: true
+        required: true,
       },
-      nutrition:{
+      nutrition: {
         type: String,
-        required: true
+        required: true,
       },
-      ingredients:{
+      ingredients: {
         type: String,
-      required: true
-      }
+        required: true,
+      },
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,5 +45,7 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 const productModel = mongoose.model("Product", productSchema)
 module.exports = productModel
+

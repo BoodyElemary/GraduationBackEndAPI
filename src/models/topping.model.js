@@ -8,9 +8,11 @@ const toppingSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
+      float: true,
       required: true,
       min: 0.01
     },
+
     toppings: [
       {
         type: String,

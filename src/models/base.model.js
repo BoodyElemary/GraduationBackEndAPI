@@ -8,8 +8,9 @@ const baseSchema = new mongoose.Schema(
       unique: true,
     },
     price: {
-      type: Schema.Types.Float,
+      type: Number,
       required: true,
+      min: 0.01
     },
     picture: {
         type: String,

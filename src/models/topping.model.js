@@ -1,8 +1,8 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const toppingSchema = new mongoose.Schema(
   {
-    name: {
+    type: {
       type: String,
       required: true,
     },
@@ -10,14 +10,18 @@ const toppingSchema = new mongoose.Schema(
       type: Number,
       float: true,
       required: true,
+      min: 0.01
     },
-    type: {
-      type: String,
-      required: true,
-    },
+
+    toppings: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const toppingModel = mongoose.model("topping", toppingSchema);
+const toppingModel = mongoose.model('Topping', toppingSchema);
 module.exports = toppingModel;

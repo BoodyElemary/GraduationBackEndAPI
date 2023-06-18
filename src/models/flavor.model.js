@@ -10,10 +10,11 @@ const flavorSchema = new mongoose.Schema(
       type: Number,
       float: true,
       required: true,
+      min: 0.01
     },
   },
   { timestamps: true }
 );
 
-const flavorModel = mongoose.model("flavor", flavorSchema)
+const flavorModel = mongoose.model("Flavor", flavorSchema)
 module.exports = flavorModel

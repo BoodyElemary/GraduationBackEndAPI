@@ -1,4 +1,5 @@
-const toppingModel = require('../models/topping.model')
+const path = require('path');
+const toppingModel = require(path.join(__dirname, "..", "models", "topping.model"))
 
 class toppingController{
 

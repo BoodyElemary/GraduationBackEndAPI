@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       float: true,
       required: true,
+      min: 0.01
     },
     picture: {
       type: String,
@@ -18,6 +19,8 @@ const productSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
+      enum: ['available', 'unavailable'],
+      default: 'available',
     },
     details: {
       brief: {
@@ -36,11 +39,13 @@ const productSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "category",
-    },
+      ref:"Category"
+    }
   },
   { timestamps: true }
 );
 
-const productModel = mongoose.model("product", productSchema);
-module.exports = productModel;
+
+const productModel = mongoose.model("Product", productSchema)
+module.exports = productModel
+

@@ -1,4 +1,5 @@
-const flavorModel = require('../models/flavor.model')
+const path = require('path');
+const flavorModel = require(path.join(__dirname, "..", "models", "flavor.model"))
 
 class flavorController{
 

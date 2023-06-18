@@ -35,7 +35,7 @@ const customerSchema = new mongoose.Schema(
     },
     voucherList: [
       {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Voucher',
       },
     ],
@@ -46,7 +46,7 @@ const customerSchema = new mongoose.Schema(
     },
     userOrders: [
       {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Order',
       },
     ],

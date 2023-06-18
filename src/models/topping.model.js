@@ -4,19 +4,20 @@ const toppingSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     price: {
-      type: Schema.Types.Float,
+      type: Number,
+      float: true,
       required: true,
     },
     type: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-const toppingModel = mongoose.model("topping", toppingSchema)
-module.exports = toppingModel
+const toppingModel = mongoose.model("topping", toppingSchema);
+module.exports = toppingModel;

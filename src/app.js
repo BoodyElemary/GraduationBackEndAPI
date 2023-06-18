@@ -16,7 +16,6 @@ const routes = require(path.join(__dirname, "routes"));
 app.use(securityProviderMW);
 app.use(compression());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(routes);
 app.use(errorMW);
 

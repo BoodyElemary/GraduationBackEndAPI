@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 const path = require("path");
 const express = require("express");
-const controller = require(path.join(
+const notFoundCtrl = require(path.join(
   __dirname,
   "..",
   "controller",
@@ -10,6 +10,6 @@ const controller = require(path.join(
 
 const router = express.Router();
 
-router.route("*").all(controller.notFound);
+router.route("*").all(notFoundCtrl.notFound);
 
 module.exports = router;

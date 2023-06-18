@@ -1,5 +1,6 @@
 const express = require('express')
-const baseController = require('../controller/base.controller')
+const path = require('path');
+const baseController = require(path.join(__dirname, "..", "controller", "base.controller"))
 const Router = express.Router({mergeParams:true})
 
 Router.get('/', baseController.index)

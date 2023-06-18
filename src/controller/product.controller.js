@@ -1,4 +1,6 @@
-const productModel = require('../models/product.model')
+const path = require('path');
+const productModel = require(path.join(__dirname, "..", "models", "product.model"))
+
 
 class productController{
 

@@ -18,18 +18,8 @@ const voucherSchema = new mongoose.Schema(
         },
         message: 'Voucher Expired',
       },
-  
     },
-    status: {
-      type: String,
-      enum: ['applied', 'expired'],
-      default: 'applied',
-    },
-    isHoliday: {
-      type: Boolean,
-      default:0,
-      required: true,
-    },
+ 
   },
   { timestamps: true }
 );

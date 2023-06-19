@@ -1,6 +1,6 @@
-// const path=require('path')
-// const voucherModel = require(path.join(__dirname,'..','models','voucher.model'))
-const voucherModel = require('../models/voucher.model')
+const path=require('path')
+const voucherModel = require(path.join(__dirname,'..','models','voucher.model'))
+// const voucherModel = require('../models/voucher.model')
 
 class voucherController{
 

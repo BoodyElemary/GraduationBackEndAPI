@@ -11,6 +11,8 @@ Router.get('/:id', categoryController.show)
 
 Router.put('/:id', categoryController.update)
 
-Router.delete('/:id', categoryController.delete)
+Router.delete('/:id', categoryController.softDelete)
+
+Router.delete('/:id/hard', categoryController.hardDelete)
 
 module.exports = Router

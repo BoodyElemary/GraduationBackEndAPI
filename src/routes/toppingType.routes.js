@@ -11,6 +11,8 @@ Router.get('/:id', toppingTypeController.show)
 
 Router.put('/:id', toppingTypeController.update)
 
-Router.delete('/:id', toppingTypeController.delete)
+Router.delete('/:id', toppingTypeController.softDelete)
+
+Router.delete('/:id/hard', toppingTypeController.hardDelete)
 
 module.exports = Router

@@ -91,7 +91,10 @@ const sendEmail = (userEmail, htmlMessage) => {
 
 const sendResetEmail = async (userEmail, link, next) => {
   const mailOptions = {
-    from: "emailittest99@mail.ru",
+    from: {
+      name: "Bobazona Support",
+      address: "emailittest99@mail.ru",
+    },
     to: userEmail,
     subject: "Reset Bobazona password",
     html: setResetPasswordView(link),

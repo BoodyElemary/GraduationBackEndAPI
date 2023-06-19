@@ -1,8 +1,8 @@
 const path = require("path");
 const mongoose = require("mongoose");
 const CustomerModel = mongoose.model("Customer");
-const AdminModel = mongoose.model("Admin");
-const SuperAdminModel = mongoose.model("SuperAdmin");
+const Admin = mongoose.model("Admin");
+const SuperAdmin = mongoose.model("SuperAdmin");
 const jwt = require("../util/jwt");
 const mailer = require("nodemailer");
 const createError = require(path.join(__dirname, "..", "util", "error"));
@@ -15,10 +15,11 @@ const passwordHandle = require(path.join(
 
 exports.login = async (req, res, next) => {
   try {
-    const customer = await CustomerModel.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+    const customer = await CustomerModel.findOne({ email: email });
     if (
       !customer ||
-      !(await passwordHandle.compare(req.body.password, customer.password))
+      !(await passwordHandle.compare(password, customer.password))
     )
       next(createError("Email or password is wrong.", 401));
     if (!customer.isActive)
@@ -36,18 +37,19 @@ exports.login = async (req, res, next) => {
 
 exports.loginAdmin = async (req, res, next) => {
   try {
+    const { role, fullName, password } = req.body;
     let admin;
-    req.body.role === "admin"
-      ? (admin = await AdminModel.findOne({ fullName: req.body.fullName }))
-      : (admin = await SuperAdminModel.findOne({
-          fullName: req.body.fullName,
+    role === "admin"
+      ? (admin = await Admin.findOne({ fullName: fullName }))
+      : (admin = await SuperAdmin.findOne({
+          fullName: fullName,
         }));
-    if (
-      !admin ||
-      !(await passwordHandle.compare(req.body.password, admin.password))
-    )
+    if (!admin || !(await passwordHandle.compare(password, admin.password)))
       next(createError("Email or password is wrong.", 401));
-    const token = jwt.create({ id: admin._id, role: req.body.role });
+    const token = jwt.create({ id: admin._id, role: role });
+    role === "admin"
+      ? Admin.findByIdAndUpdate(admin._id, { token })
+      : SuperAdmin.findByIdAndUpdate(admin._id, { token: "Bearer " + token });
     res.status(200).json({
       message: "success",
       admin,

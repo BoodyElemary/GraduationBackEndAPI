@@ -14,11 +14,13 @@ const superAdminSchema = new mongoose.Schema(
       trim: true,
       require: true,
       unique: true,
-      index: true,
     },
     password: {
       type: String,
       required: true,
+    },
+    token: {
+      type: String,
     },
   },
   { timestamps: true }

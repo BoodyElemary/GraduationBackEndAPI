@@ -1,6 +1,7 @@
 const path = require('path');
 const categoryModel = require(path.join(__dirname, "..", "models", "category.model"))
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
+const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
 
 class categoryController{
 
@@ -70,8 +71,9 @@ class categoryController{
         try{
             const id = req.params.id
             categoryModel.findOneAndDelete({_id: id})
-            .then((deletedCategory)=>{
-                productModel.deleteMany({category: id})
+            .then(async(deletedCategory)=>{
+                let deletedProducts = await productModel.deleteMany({category: id})
+                orderModel.deleteMany({'orderedProducts.product': { $in: deletedProducts.map(t => t._id)}})
                 .then(()=>res.json({success:true, data: deletedCategory, message: "category has been deleted Permanently"}))
                 .catch((error)=>res.status(500).json({success:false, message: error.errors}))
 

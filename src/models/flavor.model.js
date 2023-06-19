@@ -8,6 +8,7 @@ const flavorSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
+      float: true,
       required: true,
       min: 0.01
     },

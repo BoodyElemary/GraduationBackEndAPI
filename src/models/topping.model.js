@@ -7,11 +7,12 @@ const toppingSchema = new mongoose.Schema(
       required: true,
     },
 
-    topping: {
+    toppingType: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "ToppingType",
       required: true
     },
+
     isDeleted: {
       type: Boolean,
       default: false

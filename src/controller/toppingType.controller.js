@@ -1,6 +1,7 @@
 const path = require('path');
 const toppingTypeModel = require(path.join(__dirname, "..", "models", "toppingType.model"))
 const toppingModel = require(path.join(__dirname, "..", "models", "topping.model"))
+const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
 
 class toppingTypeController{
 
@@ -69,8 +70,11 @@ class toppingTypeController{
         try{
             const id = req.params.id
             toppingTypeModel.findByIdAndDelete(id)
-            .then((deletedToppingType)=>{
-                toppingModel.deleteMany({flavor: id})
+            .then(async (deletedToppingType)=>{
+                let deletedToppings = await toppingModel.deleteMany({toppingType: id})
+                orderModel.deleteMany({
+                    'orderedCustomizedProducts.toppings.topping': { $in: deletedToppings.map(t => t._id) }
+                })
                 .then(()=>res.json({success:true, data: deletedToppingType, message: "toppingType has been deleted Permanently"}))
                 .catch((error)=>res.status(500).json({success:false, message: error.errors}))
             })

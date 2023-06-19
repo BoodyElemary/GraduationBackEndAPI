@@ -55,10 +55,16 @@
 
 // You can send up to 300 emails/day from this sandbox server.
 // Next, you should add your own domain so you can send 10000 emails/month for free.
-
-const nodemailer = require('nodemailer');
+const path = require("path");
+const nodemailer = require("nodemailer");
+const { setResetPasswordView } = require(path.join(
+  __dirname,
+  "..",
+  "view",
+  "email-form"
+));
 const transporter = nodemailer.createTransport({
-  service: 'Mail.ru',
+  service: "Mail.ru",
   auth: {
     user: process.env.MAILER_EMAIL,
     pass: process.env.MAILER_PASSWORD,
@@ -68,17 +74,38 @@ const transporter = nodemailer.createTransport({
 // Function to send the email
 const sendEmail = (userEmail, htmlMessage) => {
   const mailOptions = {
-    from: 'emailittest99@mail.ru',
+    from: "emailittest99@mail.ru",
     to: userEmail,
-    subject: 'Welcome to My App',
+    subject: "Welcome to My App",
     html: htmlMessage,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error('Failed to send email:', error);
+      console.error("Failed to send email:", error);
     } else {
-      console.log('Email sent:', info.response);
+      console.log("Email sent:", info.response);
     }
   });
+};
+
+const sendResetEmail = async (userEmail, link, next) => {
+  const mailOptions = {
+    from: "emailittest99@mail.ru",
+    to: userEmail,
+    subject: "Reset Bobazona password",
+    html: setResetPasswordView(link),
+  };
+
+  return transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return error;
+    } else {
+      return false;
+    }
+  });
+};
+module.exports = {
+  sendEmail,
+  sendResetEmail,
 };

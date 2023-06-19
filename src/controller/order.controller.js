@@ -1,12 +1,11 @@
 const mongoose = require("mongoose");
 const path = require("path");
-const productModel = require("../models/product.model");
-const toppingModel = require("../models/topping.model");
 const OrderModel = mongoose.model("Order");
 const ProductModel = mongoose.model("Product");
 const BaseModel = mongoose.model("Base");
 const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
+const VoucherModel = mongoose.model("Voucher");
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res) => {
@@ -24,21 +23,41 @@ const createOrder = async (req, res) => {
     });
 
     let totalPrice = 0;
+    // Price of OrderedProducts && Total
     req.body.orderedProducts.forEach(async (product) => {
       productPrice =
-        (await productModel.findById(product.product).price) * product.quantity; // price for each quantity of single product
+        (await ProductModel.findById(product.product).price) * product.quantity; // price for each quantity of single product
       totalPrice += productPrice;
     });
+
+    // Price of Customizables && Total
     req.body.orderedCustomizedProducts.forEach(async (drink) => {
       basePrice = await BaseModel.findById(drink.base).price;
       flavorPrice = await FlavorModel.findById(drink.flavor).price;
       toppingsPrice = drink.toppings.reduce(
         async (prev, curr) =>
-          prev + (await ToppingModel.findById(curr.topping).price) * curr.quantity,
+          prev +
+          (await ToppingModel.findById(curr.topping).price) * curr.quantity,
         0
       );
       totalPrice += basePrice + flavorPrice + toppingsPrice;
     });
+
+    let discountPercentage = 0;
+    const getDiscount = async (discount) => {
+      if (req.body.voucher) {
+        let voucher = await VoucherModel.findById(req.body.voucher);
+        if (!voucher) {
+          return;
+        } else if (voucher.expireDate > Date.now()) {
+          return;
+        } else {
+          discountPercentage = voucher.percentage;
+        }
+      }
+    };
+    let discount = discountPercentage * totalPrice;
+    totalPrice = totalPrice - discount;
 
     const savedOrder = await order.save();
 

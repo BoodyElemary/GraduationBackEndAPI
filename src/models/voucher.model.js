@@ -16,14 +16,14 @@ const voucherSchema = new mongoose.Schema(
         validator: function (value) {
           return value > Date.now();
         },
-        message: 'Pickup time must be in the future',
+        message: 'Voucher Expired',
       },
   
     },
     status: {
       type: String,
-      enum: ['opened', 'closed'],
-      default: 'opened',
+      enum: ['applied', 'expired'],
+      default: 'applied',
     },
     isHoliday: {
       type: Boolean,

@@ -29,12 +29,9 @@ class baseController{
     show (req, res){
         try{
             const id = req.params.id
-            baseModel.findOne({_id: id, isDeleted: false})
+            baseModel.findOne({_id: id})
             .then((base)=>{
-                if(base){
-                    res.json({success: true, message: "Getting base data succefully", "data": base})
-                }
-                else res.status(404).json({success:false, message: "base doesn't exist"})
+                res.json({success: true, message: "Getting base data succefully", "data": base})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
 
@@ -44,10 +41,9 @@ class baseController{
     update (req,res){
         try {
             const id = req.params.id
-            baseModel.findOneAndUpdate({_id: id, isDeleted: false}, {$set: req.body}, {new: true})
+            baseModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
             .then((updatedbase)=>{
-                if(updatedbase) res.json({success:true, data: updatedbase, message: "base has been Updated successfully"})
-                else res.status(404).json({success:false, message:"base doesn't exist"})
+                res.json({success:true, data: updatedbase, message: "base has been Updated successfully"})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         } catch (error) {
@@ -58,10 +54,9 @@ class baseController{
     softDelete (req,res){
         try{
             const id = req.params.id
-            baseModel.findOneAndUpdate({_id: id, isDeleted: false}, {$set: {isDeleted: true}}, {new: true})
+            baseModel.findOneAndUpdate({_id: id}, {$set: {isDeleted: true}}, {new: true})
             .then((deletedbase)=>{
-                if(deletedbase) res.json({success:true, data: deletedbase, message: "base has been deleted successfully"})
-                else res.status(404).json({success:false, message:"base doesn't exist"})
+               res.json({success:true, data: deletedbase, message: "base has been deleted successfully"})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
@@ -74,10 +69,10 @@ class baseController{
     hardDelete (req,res){
         try{
             const id = req.params.id
-            baseModel.findOneAndDelete({_id: id, isDeleted: false})
+            baseModel.findOneAndDelete({_id: id})
             .then((deletedbase)=>{
                 orderModel.deleteMany({base: id})
-                .then(()=>res.json({success:true, data: deletedbase, message: "Base has been deleted successfully"}))
+                .then(()=>res.json({success:true, data: deletedbase, message: "Base has been deleted Permanently"}))
                 .catch((error)=>res.status(500).json({success:false, message: error.errors}))
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))

@@ -1,3 +1,11 @@
 const path = require("path");
 require(path.join(__dirname, "admin.model"));
 require(path.join(__dirname, "super-admin.model"));
+require(path.join(__dirname, "order.model"));
+require(path.join(__dirname, "product.model"));
+require(path.join(__dirname, "topping.model"));
+require(path.join(__dirname, "flavor.model"));
+require(path.join(__dirname, "customer.model"));
+require(path.join(__dirname, "category.model"));
+require(path.join(__dirname, "base.model"));
+require(path.join(__dirname, "voucher.model"));

@@ -16,7 +16,7 @@ const voucherSchema = new mongoose.Schema(
         validator: function (value) {
           return value > Date.now();
         },
-        message: 'Pickup time must be in the future',
+        message: 'Voucher Expired',
       },
     },
  

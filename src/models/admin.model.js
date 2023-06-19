@@ -1,5 +1,5 @@
-const path = require("path")
 const mongoose = require("mongoose");
+const path = require("path")
 
 const passwordHandle = require(path.join(__dirname, "..", "util", "password-handle"));
 

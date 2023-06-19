@@ -6,11 +6,15 @@ const toppingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    
+
     topping: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "ToppingType",
       required: true
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true },

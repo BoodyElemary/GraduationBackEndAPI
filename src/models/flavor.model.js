@@ -11,6 +11,10 @@ const flavorSchema = new mongoose.Schema(
       required: true,
       min: 0.01
     },
+    isDeleted: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );

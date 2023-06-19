@@ -13,8 +13,12 @@ const baseSchema = new mongoose.Schema(
       min: 0.01
     },
     picture: {
-        type: String,
-        required: true
+      type: String,
+      required: true
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

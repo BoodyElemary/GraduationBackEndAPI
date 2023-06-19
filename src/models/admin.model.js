@@ -1,7 +1,12 @@
 const mongoose = require("mongoose");
-const path = require("path")
+const path = require("path");
 
-const passwordHandle = require(path.join(__dirname, "..", "util", "password-handle"));
+const passwordHandle = require(path.join(
+  __dirname,
+  "..",
+  "util",
+  "password-handle"
+));
 
 const adminSchema = new mongoose.Schema(
   {
@@ -20,9 +25,14 @@ const adminSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
     },
+    token: {
+      type: String
+    }
   },
   { timestamps: true }
 );
+adminSchema.index({ fullName: "text" });
+
 adminSchema.pre("save", async () => {
   if (this.isNew || this.isModified("password"))
     try {

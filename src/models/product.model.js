@@ -28,7 +28,7 @@ const productSchema = new mongoose.Schema(
         required: true,
       },
       nutrition: {
-        type: String,
+        type: mongoose.SchemaTypes.Mixed,
         required: true,
       },
       ingredients: {

@@ -14,7 +14,7 @@ const orderRouter = require(path.join(__dirname, "order.routes"));
 const storeRouter = require(path.join(__dirname, "store.routes"));
 
 const notFoundRoute = require(path.join(__dirname, "not-found.routes"));
-const authenticationRoute = require(path.join(
+const authenticationRouter = require(path.join(
   __dirname,
   "authentication.routes"
 ));

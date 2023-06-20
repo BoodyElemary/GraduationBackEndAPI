@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
-const Customer = mongoose.model('Customer');
-const Voucher = mongoose.model('Voucher');
-const uuid = require('uuid');
-const { setConfirmView } = require('../view/email-form');
-const { sendEmail } = require('../util/nodemailer');
+const mongoose = require("mongoose");
+const Customer = mongoose.model("Customer");
+const Voucher = mongoose.model("Voucher");
+const uuid = require("uuid");
+const { setConfirmView } = require("../view/email-form");
+const { sendEmail } = require("../util/nodemailer");
 // Create a new customer
 const createCustomer = async (req, res) => {
   try {
@@ -29,10 +29,10 @@ const createCustomer = async (req, res) => {
 const getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id).populate(
-      'voucherList',
+      "voucherList"
     );
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: "Customer not found" });
     }
     res.json(customer);
   } catch (error) {
@@ -51,10 +51,10 @@ const updateCustomer = async (req, res) => {
         lastName,
         email,
       },
-      { new: true },
+      { new: true }
     );
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: "Customer not found" });
     }
     res.json(customer);
   } catch (error) {
@@ -77,9 +77,9 @@ const deleteCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: "Customer not found" });
     }
-    res.json({ message: 'Customer deleted successfully' });
+    res.json({ message: "Customer deleted successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -91,11 +91,11 @@ const addVoucherToCustomer = async (req, res) => {
     const { id, voucherId } = req.params;
     const customer = await Customer.findById(id);
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: "Customer not found" });
     }
     const voucher = await Voucher.findById(voucherId);
     if (!voucher) {
-      return res.status(404).json({ message: 'Voucher not found' });
+      return res.status(404).json({ message: "Voucher not found" });
     }
     customer.voucherList.push(voucher);
     await customer.save();
@@ -109,12 +109,12 @@ const addVoucherToCustomer = async (req, res) => {
 const sendActivationEmail = async (email, activationToken) => {
   try {
     const mailTemplateWithActivation = setConfirmView(
-      `localhost:8081/activate?token=${activationToken}`,
+      `localhost:8081/api/customers/activate/${activationToken}`
     );
 
-    await sendEmail(email, mailTemplateWithActivation);
+    sendEmail(email, mailTemplateWithActivation);
   } catch (error) {
-    throw new Error('Failed to send activation email.');
+    throw new Error("Failed to send activation email.");
   }
 };
 
@@ -123,25 +123,29 @@ const sendActivationEmail = async (email, activationToken) => {
 const activateAccount = async (req, res) => {
   try {
     const { token } = req.params;
+    console.log(req.params);
 
     // Find the customer with the provided activation token
     const customer = await Customer.findOne({ activationToken: token });
 
     if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
+      return res.status(404).json({ error: "Customer not found" });
     }
-
     // Activate the customer account
-    customer.isActive = true;
-    customer.activationToken = null;
-    await customer.save();
+    // customer.isActive = true;
+    // customer.activationToken = null;
+    const updatedCustomer = await Customer.findByIdAndUpdate(customer.id, {
+      $unset: { activationToken: "" },
+      isActive: true,
+    });
+    // await customer.save();
 
     // Redirect the customer to the frontend URL
-    const frontendUrl = 'http://localhost:4200'; // Replace with your frontend URL
+    const frontendUrl = "http://localhost:4200"; // Replace with your frontend URL
     return res.redirect(`${frontendUrl}/account-activated`);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

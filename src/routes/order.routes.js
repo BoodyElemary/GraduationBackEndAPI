@@ -16,14 +16,14 @@ const {
   getAllOrders,
 } = require(path.join(__dirname, "..", "controller", "order.controller"));
 
-Router.post("/orders", createOrderValidator, createOrder);
+Router.get("/", getAllOrders);
 
-Router.get("/orders", getAllOrders);
+Router.post("/", createOrderValidator, createOrder);
 
-Router.get("/orders/:id", getOrderById);
+Router.get("/:id", getOrderById);
 
-Router.put("/orders/:id", updateOrder);
+Router.put("/:id", updateOrder);
 
-Router.delete("/orders/:id", deleteOrder);
+Router.delete("/:id", deleteOrder);
 
 module.exports = Router;

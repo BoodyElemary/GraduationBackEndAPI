@@ -3,10 +3,11 @@ const voucherSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: true
+      required: true,
     },
     percentage: {
       type: Number,
+      float: true,
       required: true,
     },
     expireDate: {
@@ -16,13 +17,12 @@ const voucherSchema = new mongoose.Schema(
         validator: function (value) {
           return value > Date.now();
         },
-        message: 'Voucher Expired',
+        message: "Voucher Expired",
       },
     },
- 
   },
   { timestamps: true }
 );
 
-const voucherModel = mongoose.model("Voucher", voucherSchema)
-module.exports = voucherModel
+const voucherModel = mongoose.model("Voucher", voucherSchema);
+module.exports = voucherModel;

@@ -1,73 +1,84 @@
 const path = require('path');
 const toppingModel = require(path.join(__dirname, "..", "models", "topping.model"))
+const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
 
 class toppingController{
 
     index(req, res){
         try{
-            toppingModel.find()
+            toppingModel.find({isDeleted: false}).populate("topping")
             .then((toppings)=>{
                 res.json({success: true, message: "all toppings data are retrieved", data: toppings})
             })
-            .catch((error)=>res.status(500).json({success: false , message: error.message}))
+            .catch((error)=>res.status(500).json({success: false , message: error.errors}))
 
-        }catch(error){res.status(500).json({success: false, message: error.message})}
+        }catch(error){res.status(500).json({success: false, message: error.errors})}
     }
 
     create (req,res){
         try{
             toppingModel.create(req.body)
             .then((createdTopping)=>res.json({success: true, message: "topping is created Successfully", data: createdTopping}))
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
         }
     }
 
     show (req, res){
         try{
             const id = req.params.id
-            toppingModel.findOne({_id: id})
+            toppingModel.findOne({_id: id}).populate("topping")
             .then((topping)=>{
-                if(topping){
-                    res.json({success: true, message: "Getting topping data succefully", "data": topping})
-                }
-                else res.status(404).json({success:false, message: "topping doesn't exist"})
+                res.json({success: true, message: "Getting topping data succefully", "data": topping})
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
 
-        }catch(error){res.status(500).json({success:false, message: error.message})}
+        }catch(error){res.status(500).json({success:false, message: error.errors})}
     }
 
     update (req,res){
         try {
             const id = req.params.id
-            toppingModel.findByIdAndUpdate({_id: id}, {$set: req.body}, {new: true})
+            toppingModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
             .then((updatedTopping)=>{
-                if(updatedTopping) res.json({success:true, data: updatedTopping, message: "topping has been Updated successfully"})
-                else res.status(404).json({success:false, message:"topping doesn't exist"})
+                res.json({success:true, data: updatedTopping, message: "topping has been Updated successfully"})
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         } catch (error) {
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
         }
     }
 
-    delete (req,res){
+    softDelete (req,res){
+        try{
+            const id = req.params.id
+            toppingModel.findOneAndUpdate({_id: id}, {$set: {isDeleted: true}}, {new: true})
+            .then((deletedTopping)=>{
+                res.json({success:true, data: deletedTopping, message: "topping has been deleted successfully"})
+            })
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
+        }
+        catch(error){
+            res.status(500).json({success:false, message: error.errors})
+        }
+    }
+
+    hardDelete (req,res){
         try{
             const id = req.params.id
             toppingModel.findByIdAndDelete(id)
             .then((deletedTopping)=>{
-                if(deletedTopping) res.json({success:true, data: deletedTopping, message: "topping has been deleted successfully"})
-                else res.status(404).json({success:false, message:"topping doesn't exist"})
+                orderModel.deleteMany({'orderedCustomizedProducts.toppings.topping': id})
+                .then(()=>res.json({success:true, data: deletedTopping, message: "Topping has been deleted Permanently"}))
+                .catch((error)=>res.status(500).json({success:false, message: error.errors}))
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
         }
-
     }
 
 }

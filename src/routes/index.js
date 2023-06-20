@@ -27,6 +27,7 @@ router.use("/api/login", authenticationRoute);
 router.use("/api/bases", baseRouter);
 router.use("/api/flavors", flavorRouter);
 router.use("/api/toppings", toppingRouter);
+router.use("/api/toppings", toppingRouter);
 router.use("/api/categories", categoryRouter);
 router.use("/api/products", productRouter);
 router.use("/api/admin", adminRouter);

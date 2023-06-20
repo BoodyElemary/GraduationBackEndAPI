@@ -52,14 +52,17 @@ exports.loginAdmin = async (req, res, next) => {
         }));
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
       next(createError("Email or password is wrong.", 401));
-    const token = jwt.create({ id: admin._id, role: role });
-    role === "admin"
-      ? Admin.findByIdAndUpdate(admin._id, { token })
-      : SuperAdmin.findByIdAndUpdate(admin._id, { token: "Bearer " + token });
+    const token = jwt.create({ id: admin._id, role: role }, "8h");
+    if (role === "admin") {
+      admin.token = "Bearer " + token;
+      await admin.save(); // Save the updated admin object to the database
+    } else {
+      admin.token = "Bearer " + token;
+      await admin.save(); // Save the updated admin object to the database
+    }
     res.status(200).json({
       message: "success",
       admin,
-      token,
     });
   } catch (err) {
     next(err);
@@ -69,12 +72,11 @@ exports.loginAdmin = async (req, res, next) => {
 exports.passwordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
-    // const customer = await CustomerModel.findOne({ email: email });
-    // if (!customer) next(createError("Email is wrong.", 401));
-    // if (!customer.isActive)
-      // next(createError("Activate your email please.", 401));
-    // const token = jwt.create({ id: customer._id, role: "customer" });
-    let token = 111
+    const customer = await CustomerModel.findOne({ email: email });
+    if (!customer) next(createError("Email is wrong.", 401));
+    if (!customer.isActive)
+      next(createError("Activate your email please.", 401));
+    const token = jwt.create({ id: customer._id, role: "customer" });
     const resetURL = process.env.FRONT_URL + "/reset/?token=" + token;
     const error = await sendResetEmail(email, resetURL);
     error

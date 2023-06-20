@@ -12,6 +12,15 @@ const corsProvider = cors({
   Headers: ["Content-Type", "Authorization"],
 });
 
+const noBody = (req, res, next) => {
+  if ((req.method === "GET" || req.method === "DELETE") && req.body) {
+    const err = new Error("Body not allowed for GET or DELETE requests");
+    err.status = 400;
+    return next(err);
+  }
+  next()
+};
+
 const lengthControl = (req, res, next) => {
   const contentLength = req.headers["content-length"];
   if (contentLength && parseInt(contentLength) > 10000000 /*10mb*/) {
@@ -46,6 +55,7 @@ const limiter = rateLimit({
 
 module.exports = [
   corsProvider,
+  noBody,
   lengthControl,
   restrictToCountries(allowedCountries),
   limiter,

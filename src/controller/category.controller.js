@@ -2,6 +2,7 @@ const path = require('path');
 const categoryModel = require(path.join(__dirname, "..", "models", "category.model"))
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
+const {uploadImageToFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
 
 class categoryController{
 
@@ -16,9 +17,16 @@ class categoryController{
         }catch(error){res.status(500).json({success: false, message: error.errors})}
     }
 
-    create (req,res){
+    async create (req,res){
         try{
-            categoryModel.create(req.body)
+            if (!req.file){
+                return res.status(400).json({success: false, message: "please upload picture file"})
+            }
+            const response = await uploadImageToFirebaseStorage(req.file ,"categories")
+            if(!response.success){
+                res.status(500).json({success:false, message: response.message})
+            }
+            categoryModel.create({...req.body, picture: response.downloadURL})
             .then((createdCategory)=>res.json({success: true, message: "category is created Successfully", data: createdCategory}))
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }

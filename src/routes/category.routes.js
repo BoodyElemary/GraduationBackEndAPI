@@ -1,11 +1,12 @@
 const express = require('express')
 const path = require('path');
 const categoryController = require(path.join(__dirname, "..", "controller", "category.controller"))
+const {upload} = require(path.join(__dirname, "..", "controller", "uploadFile.controller"))
 const Router = express.Router({mergeParams:true})
 
 Router.get('/', categoryController.index)
 
-Router.post('/', categoryController.create)
+Router.post('/', upload.single("picture"), categoryController.create)
 
 Router.get('/:id', categoryController.show)
 

@@ -18,7 +18,7 @@ const voucherSchema = new mongoose.Schema(
         },
         message: 'Voucher Expired',
       },
-  
+
     },
     status: {
       type: String,

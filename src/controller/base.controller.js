@@ -1,6 +1,7 @@
 const path = require('path');
 const baseModel = require(path.join(__dirname, "..", "models", "base.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
+const {uploadImageToFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
 
 class baseController{
 
@@ -15,9 +16,16 @@ class baseController{
         }catch(error){res.status(500).json({success: false, message: error.errors})}
     }
 
-    create (req,res){
+    async create (req,res){
         try{
-            baseModel.create(req.body)
+            if (!req.file){
+                return res.status(400).json({success: false, message: "please upload picture file"})
+            }
+            const response = await uploadImageToFirebaseStorage(req.file ,"bases")
+            if(!response.success){
+                res.status(500).json({success:false, message: response.message})
+            }
+            baseModel.create({...req.body, picture: response.downloadURL})
             .then((createdBase)=>res.json({success: true, message: "Base is created Successfully", data: createdBase}))
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
@@ -73,12 +81,12 @@ class baseController{
             .then((deletedbase)=>{
                 orderModel.deleteMany({base: id})
                 .then(()=>res.json({success:true, data: deletedbase, message: "Base has been deleted Permanently"}))
-                .catch((error)=>res.status(500).json({success:false, message: error.errors}))
+                .catch((error)=>res.status(500).json({success:false, message: error}))
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
+            .catch((error)=>res.status(500).json({succe:false, message: error}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.errors})
+            res.status(500).json({sucs:false, message: error})
         }
 
     }

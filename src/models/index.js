@@ -8,3 +8,5 @@ require(path.join(__dirname, "flavor.model"));
 require(path.join(__dirname, "customer.model"));
 require(path.join(__dirname, "category.model"));
 require(path.join(__dirname, "base.model"));
+require(path.join(__dirname, "voucher.model"));
+require(path.join(__dirname, "store.model"));

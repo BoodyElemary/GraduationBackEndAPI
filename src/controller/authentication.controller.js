@@ -1,10 +1,10 @@
+const path = require("path");
 const mongoose = require("mongoose");
 const CustomerModel = mongoose.model("Customer");
-const AdminModel = mongoose.model("Admin");
-const SuperAdminModel = mongoose.model("SuperAdmin");
+const Admin = mongoose.model("Admin");
+const SuperAdmin = mongoose.model("SuperAdmin");
 const jwt = require("../util/jwt");
 const mailer = require("nodemailer");
-const { body } = require("express-validator");
 const createError = require(path.join(__dirname, "..", "util", "error"));
 const passwordHandle = require(path.join(
   __dirname,
@@ -12,13 +12,20 @@ const passwordHandle = require(path.join(
   "util",
   "password-handle"
 ));
+const { sendResetEmail } = require(path.join(
+  __dirname,
+  "..",
+  "util",
+  "nodemailer"
+));
 
 exports.login = async (req, res, next) => {
   try {
-    const customer = await CustomerModel.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+    const customer = await CustomerModel.findOne({ email: email });
     if (
       !customer ||
-      !(await passwordHandle.compare(req.body.password, customer.password))
+      !(await passwordHandle.compare(password, customer.password))
     )
       next(createError("Email or password is wrong.", 401));
     if (!customer.isActive)
@@ -36,107 +43,48 @@ exports.login = async (req, res, next) => {
 
 exports.loginAdmin = async (req, res, next) => {
   try {
+    const { role, fullName, password } = req.body;
     let admin;
-    req.body.role === "admin"
-      ? (admin = await AdminModel.findOne({ fullName: req.body.fullName }))
-      : (admin = await SuperAdminModel.findOne({
-          fullName: req.body.fullName,
+    role === "admin"
+      ? (admin = await Admin.findOne({ fullName: fullName }))
+      : (admin = await SuperAdmin.findOne({
+          fullName: fullName,
         }));
-    if (
-      !admin ||
-      !(await passwordHandle.compare(req.body.password, admin.password))
-    )
+    if (!admin || !(await passwordHandle.compare(password, admin.password)))
       next(createError("Email or password is wrong.", 401));
-    const token = jwt.create({ id: admin._id, role: req.body.role });
+    const token = jwt.create({ id: admin._id, role: role }, "8h");
+    if (role === "admin") {
+      admin.token = "Bearer " + token;
+      await admin.save(); // Save the updated admin object to the database
+    } else {
+      admin.token = "Bearer " + token;
+      await admin.save(); // Save the updated admin object to the database
+    }
     res.status(200).json({
       message: "success",
       admin,
-      token,
     });
   } catch (err) {
     next(err);
   }
 };
 
-exports.passwordReset = (req, res, next) => {
-  crypto.randomBytes(32, (err, buffer) => {
-    if (err) {
-      next(err);
-    }
-    const token = buffer.toString("hex");
-    teacherModel
-      .findOne({ email: req.body.email })
-      .then((teacher) => {
-        if (!teacher) {
-          let error = new Error("Email Not found");
-          error.status = 401;
-          throw error;
-        }
-        teacher.activateToken = token;
-        teacher.activateTokenExp = Date.now() + 3600000;
-        return teacher.save();
-      })
-      .then(() => {
-        let transporter = mailer.createTransport({
-          service: "outlook",
-          auth: {
-            user: "ahmedketa12@gmail.com", //ToDo
-            pass: "Nonoman23", //ToDo
-          },
+exports.passwordReset = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const customer = await CustomerModel.findOne({ email: email });
+    if (!customer) next(createError("Email is wrong.", 401));
+    if (!customer.isActive)
+      next(createError("Activate your email please.", 401));
+    const token = jwt.create({ id: customer._id, role: "customer" });
+    const resetURL = process.env.FRONT_URL + "/reset/?token=" + token;
+    const error = await sendResetEmail(email, resetURL);
+    error
+      ? next(error)
+      : res.status(200).json({
+          message: "success",
         });
-        let mailOptions = {
-          type: "OAUTH2",
-          from: "ahmedketa12@gmail.com",
-          to: req.body.email,
-          subject: "Password reset",
-          html:
-            // fs.readFileSync(
-            //   path.join(__dirname, "..", "view", "email-validation.html")
-            // ) +
-            `<a href="localhost:8080/active/${token}">localhost:8080/active/${token}</a>`,
-          // text: "Welcome from Node.js",
-        };
-        transporter.sendMail(mailOptions, (err) => {
-          if (err) {
-            next(err);
-          } else {
-            res.status(200).json({ message: "Email sent" });
-          }
-        });
-      })
-      .catch((err) => next(err));
-  });
-};
-
-exports.getReset = (req, res, next) => {
-  teacherModel
-    .findOne({ activateToken: req.params.token })
-    .then((teacher) => {
-      if (!teacher) {
-        let error = new Error("No teacher with this reset token");
-        error.status(401);
-        throw error;
-      } else if (teacher.activateTokenExp < Date.now) {
-        let error = new Error("Expired Token");
-        error.status(401);
-        throw error;
-      } else if (teacher.active) {
-        let token = jwt.sign(
-          {
-            id: teacher._id,
-            role: "teacher",
-          },
-          tokenKey,
-          { expiresIn: "8h" }
-        );
-        res.status(200).json({ message: "ok", token }); //ToDo (Direct to reset Page with token)
-      } else {
-        let error = new Error("Activate your email please.");
-        error.status = 401;
-        throw error;
-      }
-    })
-    .catch((err) => {
-      next(err);
-    });
+  } catch (err) {
+    next(err);
+  }
 };

@@ -1,76 +1,97 @@
 const path = require('path');
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
+const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
 
 
 class productController{
 
     index(req, res){
         try{
-            productModel.find()
+            productModel.find({isDeleted: false})
             .then((products)=>{
                 res.json({success: true, message: "all products data are retrieved", data: products})
             })
-            .catch((error)=>res.status(500).json({success: false , message: error.message}))
+            .catch((error)=>res.status(500).json({success: false , message: error.errors}))
 
-        }catch(error){res.status(500).json({success: false, message: error.message})}
+        }catch(error){res.status(500).json({success: false, message: error.errors})}
+
     }
+
+
 
     create (req,res){
         try{
             productModel.create(req.body)
             .then((createdProduct)=>res.json({success: true, message: "product is created Successfully", data: createdProduct}))
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
         }
+
     }
+
+
 
     show (req, res){
         try{
             const id = req.params.id
             productModel.findOne({_id: id})
             .then((product)=>{
-                if(product){
-                    res.json({success: true, message: "Getting product data succefully", "data": product})
-                }
-                else res.status(404).json({success:false, message: "product doesn't exist"})
+                res.json({success: true, message: "Getting product data succefully", "data": product})
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
 
-        }catch(error){res.status(500).json({success:false, message: error.message})}
+        }catch(error){res.status(500).json({success:false, message: error.errors})}
+
     }
+
+
 
     update (req,res){
         try {
             const id = req.params.id
-            productModel.findByIdAndUpdate({_id: id}, {$set: req.body}, {new: true})
+            productModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
             .then((updatedProduct)=>{
-                if(updatedProduct) res.json({success:true, data: updatedProduct, message: "product has been Updated successfully"})
-                else res.status(404).json({success:false, message:"product doesn't exist"})
+              res.json({success:true, data: updatedProduct, message: "product has been Updated successfully"})
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         } catch (error) {
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
         }
     }
 
-    delete (req,res){
+
+    softDelete (req,res){
         try{
             const id = req.params.id
-            productModel.findByIdAndDelete(id)
+            productModel.findOneAndUpdate({_id: id}, {$set: {isDeleted: true}}, {new: true})
             .then((deletedProduct)=>{
-                if(deletedProduct) res.json({success:true, data: deletedProduct, message: "product has been deleted successfully"})
-                else res.status(404).json({success:false, message:"product doesn't exist"})
+                res.json({success:true, data: deletedProduct, message: "product has been deleted successfully"})
             })
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: error.errors})
+        }
+    }
+
+    hardDelete (req,res){
+        try{
+            const id = req.params.id
+            productModel.findOneAndDelete({_id: id})
+            .then(async(deletedProduct)=>{
+                orderModel.deleteMany({'orderedProducts.product': id})
+                .then(()=>res.json({success:true, data: deletedProduct, message: "Product has been deleted Permanently"}))
+                .catch((error)=>res.status(500).json({success:false, message: error.errors}))
+
+            })
+            .catch((error)=>res.status(500).json({success:false, message: error.errors}))
+        }
+        catch(error){
+            res.status(500).json({success:false, message: error.errors})
         }
 
     }
-
 }
-
-module.exports = new productController()
+module.exports = new productController();

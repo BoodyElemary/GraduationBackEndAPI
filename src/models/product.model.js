@@ -28,7 +28,7 @@ const productSchema = new mongoose.Schema(
         required: true,
       },
       nutrition: {
-        type: String,
+        type: mongoose.SchemaTypes.Mixed,
         required: true,
       },
       ingredients: {
@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref:"Category"
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

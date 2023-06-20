@@ -1,14 +1,15 @@
 const path = require('path');
-const flavorModel = require(path.join(__dirname, "..", "models", "flavor.model"))
+const toppingTypeModel = require(path.join(__dirname, "..", "models", "toppingType.model"))
+const toppingModel = require(path.join(__dirname, "..", "models", "topping.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
 
-class flavorController{
+class toppingTypeController{
 
     index(req, res){
         try{
-            flavorModel.find({isDeleted: false})
-            .then((flavors)=>{
-                res.json({success: true, message: "all flavors data are retrieved", data: flavors})
+            toppingTypeModel.find({isDeleted: false})
+            .then((toppingType)=>{
+                res.json({success: true, message: "all toppingType data are retrieved", data: toppingType})
             })
             .catch((error)=>res.status(500).json({success: false , message: error.errors}))
 
@@ -17,8 +18,8 @@ class flavorController{
 
     create (req,res){
         try{
-            flavorModel.create(req.body)
-            .then((createdflavor)=>res.json({success: true, message: "flavor is created Successfully", data: createdflavor}))
+            toppingTypeModel.create(req.body)
+            .then((createdToppingType)=>res.json({success: true, message: "toppingType is created Successfully", data: createdToppingType}))
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
         catch(error){
@@ -29,9 +30,9 @@ class flavorController{
     show (req, res){
         try{
             const id = req.params.id
-            flavorModel.findOne({_id: id})
-            .then((flavor)=>{
-                res.json({success: true, message: "Getting flavor data succefully", "data": flavor})
+            toppingTypeModel.findOne({_id: id})
+            .then((toppingType)=>{
+                res.json({success: true, message: "Getting toppingType data succefully", "data": toppingType})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
 
@@ -41,9 +42,9 @@ class flavorController{
     update (req,res){
         try {
             const id = req.params.id
-            flavorModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
-            .then((updatedflavor)=>{
-               res.json({success:true, data: updatedflavor, message: "flavor has been Updated successfully"})
+            toppingTypeModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
+            .then((updatedToppingType)=>{
+               res.json({success:true, data: updatedToppingType, message: "toppingType has been Updated successfully"})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         } catch (error) {
@@ -54,9 +55,9 @@ class flavorController{
     softDelete (req,res){
         try{
             const id = req.params.id
-            flavorModel.findOneAndUpdate({_id: id}, {$set: {isDeleted: true}}, {new: true})
-            .then((deletedflavor)=>{
-                res.json({success:true, data: deletedflavor, message: "flavor has been deleted successfully"})
+            toppingTypeModel.findByIdAndUpdate(id)
+            .then((deletedToppingType)=>{
+              res.json({success:true, data: deletedToppingType, message: "toppingType has been deleted successfully"})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
@@ -68,10 +69,13 @@ class flavorController{
     hardDelete (req,res){
         try{
             const id = req.params.id
-            flavorModel.findByIdAndDelete(id)
-            .then((deletedflavor)=>{
-                orderModel.deleteMany({flavor: id})
-                .then(()=>res.json({success:true, data: deletedflavor, message: "Flavor has been deleted Permanently"}))
+            toppingTypeModel.findByIdAndDelete(id)
+            .then(async (deletedToppingType)=>{
+                let deletedToppings = await toppingModel.deleteMany({toppingType: id})
+                orderModel.deleteMany({
+                    'orderedCustomizedProducts.toppings.topping': { $in: deletedToppings.map(t => t._id) }
+                })
+                .then(()=>res.json({success:true, data: deletedToppingType, message: "toppingType has been deleted Permanently"}))
                 .catch((error)=>res.status(500).json({success:false, message: error.errors}))
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
@@ -79,9 +83,8 @@ class flavorController{
         catch(error){
             res.status(500).json({success:false, message: error.errors})
         }
-
     }
 
 }
 
-module.exports = new flavorController()
+module.exports = new toppingTypeController()

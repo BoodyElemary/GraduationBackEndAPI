@@ -7,8 +7,12 @@ const categorySchema = new mongoose.Schema(
       required: true
     },
     picture: {
-        type: String,
-        required: true
+      type: String,
+      required: true
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

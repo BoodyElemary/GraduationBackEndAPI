@@ -3,6 +3,11 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
+    },
     pickUpTime: {
       type: Date,
       required: true,
@@ -19,7 +24,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: function (value) {
-          return value > Date.now() && value > this.pickupTime;
+          return value > Date.now();
         },
         message: "Arrival time must be after pickup time and in the future",
       },

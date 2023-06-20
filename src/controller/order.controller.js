@@ -1,51 +1,45 @@
 const mongoose = require("mongoose");
 const path = require("path");
-const productModel = require("../models/product.model");
-const toppingModel = require("../models/topping.model");
 const OrderModel = mongoose.model("Order");
 const ProductModel = mongoose.model("Product");
 const BaseModel = mongoose.model("Base");
 const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
+const VoucherModel = mongoose.model("Voucher");
+const { validationResult } = require("express-validator");
+const { calculateTotalPrice } = require("../util/calculateTotalPrice");
 
 // ------------------ Controller for creating order
-const createOrder = async (req, res) => {
+const createOrder = async (req, res, next) => {
+  const errors = validationResult(req.body);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const order = new OrderModel({
+      customer: req.body.customer,
       pickUpTime: req.body.pickUpTime,
       arrivalTime: req.body.arrivalTime,
       status: "pending",
-      note: req.body.note.trim(),
+      note: req.body.note,
       orderedProducts: req.body.orderedProducts,
       orderedCustomizedProducts: req.body.orderedCustomizedProducts,
-      store: req.body.store.trim(),
-      //   voucher: req.body.voucher.trim(),
-      //   totalPrice: req.body.totalPrice,
+      store: req.body.store,
+      voucher: req.body.voucher,
     });
 
-    let totalPrice = 0;
-    req.body.orderedProducts.forEach(async (product) => {
-      productPrice =
-        (await productModel.findById(product.product).price) * product.quantity; // price for each quantity of single product
-      totalPrice += productPrice;
-    });
-    req.body.orderedCustomizedProducts.forEach(async (drink) => {
-      basePrice = await BaseModel.findById(drink.base).price;
-      flavorPrice = await FlavorModel.findById(drink.flavor).price;
-      toppingsPrice = drink.toppings.reduce(
-        async (prev, curr) =>
-          prev + (await ToppingModel.findById(curr.topping).price) * curr.quantity,
-        0
-      );
-      totalPrice += basePrice + flavorPrice + toppingsPrice;
-    });
+    let totalPrice = await calculateTotalPrice(req);
+
+    order.totalPrice = totalPrice;
 
     const savedOrder = await order.save();
 
-    res.status(201).json(savedOrder);
+    res
+      .status(201)
+      .json({ success: true, message: "Order has been created successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
@@ -58,19 +52,25 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("pickUpTime")
-      .populate("status")
-      .populate("note")
-      .populate("orderedProducts.product")
+      .populate("customer", { _id: 1 })
+      .select("pickUpTime")
+      .select("note")
+      .populate("orderedProducts.product", {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate("orderedProducts.quantity")
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
-          path: "base flavor toppings.topping",
+          path: "base flavor toppings.topping quantity",
         },
       })
-      .populate("store")
-      .populate("voucher")
-      .populate("totalPrice")
+      .populate("store", { name: 1, location: 1 })
+      .populate("voucher", { percentage: 1, code: 1 })
+      .select("totalPrice")
+      .select("status")
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
@@ -153,15 +153,18 @@ const updateOrder = async (req, res) => {
 const deleteOrder = async (req, res) => {
   try {
     const order = await OrderModel.findByIdAndDelete(req.params.id);
-
+    console.log(order);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Order has been deleted successfully",
+      });
     }
-
-    res.sendStatus(204);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err });
   }
 };
 

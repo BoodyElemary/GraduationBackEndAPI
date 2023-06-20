@@ -2,23 +2,21 @@ const mongoose = require('mongoose');
 
 const toppingSchema = new mongoose.Schema(
   {
-    type: {
+    item: {
       type: String,
       required: true,
     },
-    price: {
-      type: Number,
-      float: true,
-      required: true,
-      min: 0.01
+
+    toppingType: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "ToppingType",
+      required: true
     },
 
-    toppings: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
+    isDeleted: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true },
 );

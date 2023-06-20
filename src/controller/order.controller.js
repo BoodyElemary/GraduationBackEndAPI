@@ -7,6 +7,7 @@ const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
 const VoucherModel = mongoose.model("Voucher");
 const { validationResult } = require("express-validator");
+const { calculateTotalPrice } = require("../util/calculateTotalPrice");
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
@@ -26,56 +27,11 @@ const createOrder = async (req, res, next) => {
       orderedCustomizedProducts: req.body.orderedCustomizedProducts,
       store: req.body.store,
       voucher: req.body.voucher,
-      totalPrice: req.body.totalPrice,
     });
 
-    let totalPrice = 0;
+    let totalPrice = await calculateTotalPrice(req);
 
-    // check if the order has any products
-    if (req.body.orderedProducts || req.body.orderedCustomizedProducts) {
-      // Price of OrderedProducts && Total
-      if (req.body.orderedProducts) {
-        req.body.orderedProducts.forEach(async (product) => {
-          productPrice =
-            (await ProductModel.findById(product.product).price) *
-            product.quantity; // price for each quantity of single product
-          totalPrice += productPrice;
-        });
-      }
-
-      // Price of Customizables && Total
-      if (req.body.orderedCustomizedProducts) {
-        req.body.orderedCustomizedProducts.forEach(async (drink) => {
-          basePrice = await BaseModel.findById(drink.base).price;
-          flavorPrice = await FlavorModel.findById(drink.flavor).price;
-          toppingsPrice = drink.toppings.reduce(
-            async (prev, curr) =>
-              prev +
-              (await ToppingModel.findById(curr.topping).price) * curr.quantity,
-            0
-          );
-          totalPrice += basePrice + flavorPrice + toppingsPrice;
-        });
-      }
-    } else {
-      throw new Error("Order is empty");
-    }
-
-    let discountPercentage = 0;
-    const getDiscount = async (discount) => {
-      if (req.body.voucher) {
-        let voucher = await VoucherModel.findById(req.body.voucher);
-        if (!voucher) {
-          return;
-        } else if (voucher.expireDate > Date.now()) {
-          return;
-        } else {
-          discountPercentage = voucher.percentage;
-        }
-      }
-    };
-    let discount = discountPercentage * totalPrice;
-    totalPrice = totalPrice - discount;
+    order.totalPrice = totalPrice;
 
     const savedOrder = await order.save();
 
@@ -96,7 +52,7 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("customer")
+      .populate("customer", { _id: 1 })
       .select("pickUpTime")
       .select("note")
       .populate("orderedProducts.product", {

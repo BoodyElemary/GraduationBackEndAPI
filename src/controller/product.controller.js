@@ -16,7 +16,7 @@ class productController{
         }catch(error){res.status(500).json({success: false, message: error.errors})}
 
     }
-  }
+
 
 
     create (req,res){
@@ -30,7 +30,7 @@ class productController{
         }
 
     }
-  }
+
 
 
     show (req, res){
@@ -45,7 +45,7 @@ class productController{
         }catch(error){res.status(500).json({success:false, message: error.errors})}
 
     }
-  }
+
 
 
     update (req,res){
@@ -60,7 +60,7 @@ class productController{
             res.status(500).json({success:false, message: error.errors})
         }
     }
-  }
+
 
     softDelete (req,res){
         try{
@@ -93,9 +93,5 @@ class productController{
         }
 
     }
-
-
-
 }
-
 module.exports = new productController();

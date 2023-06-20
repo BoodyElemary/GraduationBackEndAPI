@@ -33,6 +33,7 @@ class categoryController{
         catch(error){
             res.status(500).json({success:false, message: error.errors})
         }
+
     }
 
     show (req, res){

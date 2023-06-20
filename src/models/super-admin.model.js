@@ -25,13 +25,14 @@ const superAdminSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-superAdminSchema.pre("save", async () => {
-  if (this.isNew || this.isModified("password"))
+superAdminSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("password")) {
     try {
       this.password = await passwordHandle.hash(this.password);
     } catch (error) {
-      next(error);
+      next(error); // Pass the error to the error handler middleware
     }
+  }
   next();
 });
 mongoose.model("SuperAdmin", superAdminSchema);

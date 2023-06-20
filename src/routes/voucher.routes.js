@@ -1,7 +1,7 @@
 const express = require('express')
 const path=require('path')
-// const storeController = require(path.join(__dirname,'..','controller','store.controller'))
-const voucherController = require('../controller/voucher.controller')
+const voucherController = require(path.join(__dirname,'..','controller','voucher.controller'))
+// const voucherController = require('../controller/voucher.controller')
 const Router = express.Router({mergeParams:true})
 
 Router.get('/', voucherController.index)

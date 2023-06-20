@@ -6,7 +6,11 @@ const authCtrl = require(path.join(
   "controller",
   "authentication.controller"
 ));
-const { loginValidation, loginAdminValidation } = require(path.join(
+const {
+  loginValidation,
+  loginAdminValidation,
+  resetPasswordValidation,
+} = require(path.join(
   __dirname,
   "..",
   "middleware",
@@ -25,6 +29,8 @@ router.route("/").post(loginValidation, validationResult, authCtrl.login);
 router
   .route("/admin")
   .post(loginAdminValidation, validationResult, authCtrl.loginAdmin);
-router.route("/reset").post(authCtrl.passwordReset);
+router
+  .route("/reset")
+  .post(resetPasswordValidation, validationResult, authCtrl.passwordReset);
 
 module.exports = router;

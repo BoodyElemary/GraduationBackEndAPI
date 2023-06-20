@@ -1,6 +1,6 @@
 const { body, param } = require("express-validator");
 const mongoose = require("mongoose");
-// const Store = mongoose.model('Store')
+const Store = mongoose.model('Store')
 const Admin = mongoose.model("Admin");
 
 const newAdminValidation = [

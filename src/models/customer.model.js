@@ -33,6 +33,11 @@ const customerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     voucherList: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -44,19 +49,18 @@ const customerSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
-    userOrders: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Order',
-      },
-    ],
+    activationToken: {
+      type: String,
+      required: true,
+    },
   },
 
   { timestamps: true },
 );
 
-customerSchema.pre("save", async function (next) {
-  if (this.isNew || this.isModified("password")) {
+
+customerSchema.pre('save', async function (next) {
+  if (this.isNew || this.isModified('password')) {
     try {
       this.password = await passwordHandle.hash(this.password);
     } catch (error) {

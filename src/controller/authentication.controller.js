@@ -69,11 +69,12 @@ exports.loginAdmin = async (req, res, next) => {
 exports.passwordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const customer = await CustomerModel.findOne({ email: email });
-    if (!customer) next(createError("Email is wrong.", 401));
-    if (!customer.isActive)
-      next(createError("Activate your email please.", 401));
-    const token = jwt.create({ id: customer._id, role: "customer" });
+    // const customer = await CustomerModel.findOne({ email: email });
+    // if (!customer) next(createError("Email is wrong.", 401));
+    // if (!customer.isActive)
+      // next(createError("Activate your email please.", 401));
+    // const token = jwt.create({ id: customer._id, role: "customer" });
+    let token = 111
     const resetURL = process.env.FRONT_URL + "/reset/?token=" + token;
     const error = await sendResetEmail(email, resetURL);
     error

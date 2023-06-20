@@ -19,10 +19,10 @@ class storeController{
         try{
             storeModel.create(req.body)
             .then((createdstore)=>res.json({success: true, message: "store is created Successfully", data: createdstore}))
-            .catch((error)=>res.status(500).json({success:false, message: error.message}))
+            .catch((error)=>res.status(500).json({success:false, message: "poooooo"}))
         }
         catch(error){
-            res.status(500).json({success:false, message: error.message})
+            res.status(500).json({success:false, message: "pooooooooofwghfgfhrghngooooooo"})
         }
     }
 

@@ -5,7 +5,7 @@ const createError = require(path.join(__dirname, "..", "util", "error"));
 const Admin = mongoose.model("Admin");
 const SuperAdmin = mongoose.model("SuperAdmin");
 
-module.exports = async (req, res, next) => {
+module.exports.isLogin = async (req, res, next) => {
   try {
     let token = req.get("authorization");
     if (!token) next(createError("Login to auth", 403));
@@ -28,23 +28,20 @@ module.exports = async (req, res, next) => {
 };
 
 // const isAuthorized = (req, res, next) => {
-//   let allowed = false;
+//   const allowed = false;
 //   let allowedRoutes;
 //   if (req.user.role === "customer") {
 //     allowedRoutes = [
-//       { path: "/api/orders/2", methods: ["POST", "GET", "DELETE", "PUT"] },
-//       { path: "/api/orders/3", methods: ["GET", "DELETE", "PUT"] },
+//       { path: "/api/blabla", methods: ["POST", "GET"] }, //example
+//       { path: "/api/blabla", methods: ["GET"] }, //example
 //     ];
 //   } else if (req.user.role === "admin") {
-//     allowedRoutes = [
-//       { path: "/api/1", methods: ["GET", "PUT", "DELETE", "POST"] },
-//       { path: "/api/orders/3", methods: ["GET", "DELETE", "PUT"] },
-//     ];
+//     allowedRoutes = [{ path: "/api/admin/profile", methods: ["GET"] }];
 //   } else if (req.user.role === "super") {
 //     return next();
 //   } else next(createError("Unknown user role!!"));
 //   allowed = allowedRoutes.some((route) => {
-//     const pathMatches = req.path.includes(route.path);
+//     const pathMatches = req.path === route.path;
 //     const methodMatches = route.methods.includes(req.method);
 //     return pathMatches && methodMatches;
 //   });
@@ -54,3 +51,28 @@ module.exports = async (req, res, next) => {
 // };
 
 // module.exports = [isLogin, isAuthorized];
+module.exports.isAdmin = (req, res, next) => {
+  if (req.user.role === "admin" || req.user.role === "super") {
+    next();
+  } else {
+    next(createError("not authorized!", 403));
+  }
+};
+module.exports.isCustomer = (req, res, next) => {
+  if (req.user.role === "customer" || req.user.role === "super") {
+    next();
+  } else {
+    next(createError("not authorized!", 403));
+  }
+};
+module.exports.isAdminOrCustomer = (req, res, next) => {
+  if (
+    req.user.role === "admin" ||
+    req.user.role === "customer" ||
+    req.user.role === "super"
+  ) {
+    next();
+  } else {
+    next(createError("not authorized!", 403));
+  }
+};

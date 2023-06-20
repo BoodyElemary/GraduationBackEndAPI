@@ -1,12 +1,18 @@
 const express = require("express");
 const Router = express.Router();
 const path = require("path");
-const { body } = require(path.join(
+const { createOrderValidator } = require(path.join(
   __dirname,
   "..",
   "middleware",
   "validators",
   "order.validator"
+));
+const validationResult = require(path.join(
+  __dirname,
+  "..",
+  "middleware",
+  "validation.mw"
 ));
 const {
   createOrder,
@@ -18,7 +24,7 @@ const {
 
 Router.get("/", getAllOrders);
 
-Router.post("/", createOrderValidator, createOrder);
+Router.route("/").post(createOrderValidator, validationResult, createOrder);
 
 Router.get("/:id", getOrderById);
 

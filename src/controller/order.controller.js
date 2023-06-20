@@ -6,11 +6,19 @@ const BaseModel = mongoose.model("Base");
 const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
 const VoucherModel = mongoose.model("Voucher");
+const { validationResult } = require("express-validator");
+const { calculateTotalPrice } = require("../util/calculateTotalPrice");
 
 // ------------------ Controller for creating order
-const createOrder = async (req, res) => {
+const createOrder = async (req, res, next) => {
+  const errors = validationResult(req.body);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const order = new OrderModel({
+      customer: req.body.customer,
       pickUpTime: req.body.pickUpTime,
       arrivalTime: req.body.arrivalTime,
       status: "pending",
@@ -18,52 +26,12 @@ const createOrder = async (req, res) => {
       orderedProducts: req.body.orderedProducts,
       orderedCustomizedProducts: req.body.orderedCustomizedProducts,
       store: req.body.store,
-      //   voucher: req.body.voucher.trim(),
-      totalPrice: req.body.totalPrice,
+      voucher: req.body.voucher,
     });
 
-    let totalPrice = 0;
+    let totalPrice = await calculateTotalPrice(req);
 
-    // Price of OrderedProducts && Total
-    if (req.body.orderedProducts || req.body.orderedCustomizedProducts) {
-      req.body.orderedProducts.forEach(async (product) => {
-        productPrice =
-          (await ProductModel.findById(product.product).price) *
-          product.quantity; // price for each quantity of single product
-        totalPrice += productPrice;
-      });
-
-      // Price of Customizables && Total
-      req.body.orderedCustomizedProducts.forEach(async (drink) => {
-        basePrice = await BaseModel.findById(drink.base).price;
-        flavorPrice = await FlavorModel.findById(drink.flavor).price;
-        toppingsPrice = drink.toppings.reduce(
-          async (prev, curr) =>
-            prev +
-            (await ToppingModel.findById(curr.topping).price) * curr.quantity,
-          0
-        );
-        totalPrice += basePrice + flavorPrice + toppingsPrice;
-      });
-    } else {
-      res.json("Order is empty");
-    }
-
-    let discountPercentage = 0;
-    const getDiscount = async (discount) => {
-      if (req.body.voucher) {
-        let voucher = await VoucherModel.findById(req.body.voucher);
-        if (!voucher) {
-          return;
-        } else if (voucher.expireDate > Date.now()) {
-          return;
-        } else {
-          discountPercentage = voucher.percentage;
-        }
-      }
-    };
-    let discount = discountPercentage * totalPrice;
-    totalPrice = totalPrice - discount;
+    order.totalPrice = totalPrice;
 
     const savedOrder = await order.save();
 
@@ -71,8 +39,7 @@ const createOrder = async (req, res) => {
       .status(201)
       .json({ success: true, message: "Order has been created successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err });
+    next(err);
   }
 };
 
@@ -85,19 +52,25 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("pickUpTime")
-      .populate("status")
-      .populate("note")
-      .populate("orderedProducts.product", { status: 0 })
+      .populate("customer", { _id: 1 })
+      .select("pickUpTime")
+      .select("note")
+      .populate("orderedProducts.product", {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate("orderedProducts.quantity")
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
-          path: "base flavor toppings.topping",
+          path: "base flavor toppings.topping quantity",
         },
       })
       .populate("store", { name: 1, location: 1 })
-      .populate("voucher", { percentage: 1 })
-      .populate("totalPrice")
+      .populate("voucher", { percentage: 1, code: 1 })
+      .select("totalPrice")
+      .select("status")
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
@@ -180,14 +153,15 @@ const updateOrder = async (req, res) => {
 const deleteOrder = async (req, res) => {
   try {
     const order = await OrderModel.findByIdAndDelete(req.params.id);
-
+    console.log(order);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Order has been deleted successfully",
+      });
     }
-
-    res
-      .status(204)
-      .json({ success: true, message: "Order has been deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err });

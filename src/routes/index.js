@@ -24,10 +24,11 @@ const customerRoute = require(path.join(__dirname, "customer.routes"));
 const authMW = require(path.join(__dirname, "..", "middleware", "auth.mw"));
 
 //add routes here
-router.use("/api/login", authenticationRouter);
+router.use("/api/login", authenticationRoute);
 router.use("/api/bases", baseRouter);
 router.use("/api/flavors", flavorRouter);
 router.use('/api/toppingsType',toppingTypeRouter);
+router.use("/api/toppings", toppingRouter);
 router.use("/api/toppings", toppingRouter);
 router.use("/api/categories", categoryRouter);
 router.use("/api/products", productRouter);

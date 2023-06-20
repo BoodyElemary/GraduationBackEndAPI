@@ -55,13 +55,14 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-customerSchema.pre('save', async () => {
-  if (this.isNew || this.isModified('password'))
+customerSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("password")) {
     try {
       this.password = await passwordHandle.hash(this.password);
     } catch (error) {
-      next(error);
+      next(error); // Pass the error to the error handler middleware
     }
+  }
   next();
 });
 

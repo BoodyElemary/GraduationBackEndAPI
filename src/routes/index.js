@@ -13,13 +13,16 @@ const adminRouter = require(path.join(__dirname, "admin.routes"));
 const orderRouter = require(path.join(__dirname, 'order.routes'));
 const storeRouter = require(path.join(__dirname, 'store.routes'));
 const notFoundRoute = require(path.join(__dirname, "not-found.routes"));
-const authenticationRoute = require(path.join(
+const authenticationRouter = require(path.join(
   __dirname,
   "authentication.routes"
 ));
 
+const authMW = require(path.join(__dirname, "..", "middleware", "auth.mw"))
+
 //add routes here
-router.use("/api/login", authenticationRoute);
+router.use("/api/login", authenticationRouter);
+router.use(authMW)
 router.use("/api/bases", baseRouter);
 router.use("/api/flavors", flavorRouter);
 router.use("/api/toppings", toppingRouter);

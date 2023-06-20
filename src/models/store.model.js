@@ -14,7 +14,7 @@ const storeSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: function(v) {
-          const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{9,12}$/gm;
+          const phoneRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/gm;
           return phoneRegex.test(v);
         },
         message: 'Invalid phone number',

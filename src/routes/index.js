@@ -24,7 +24,7 @@ const customerRoute = require(path.join(__dirname, "customer.routes"));
 const authMW = require(path.join(__dirname, "..", "middleware", "auth.mw"));
 
 //add routes here
-router.use("/api/login", authenticationRoute);
+router.use("/api/login", authenticationRouter);
 router.use("/api/bases", baseRouter);
 router.use("/api/flavors", flavorRouter);
 router.use('/api/toppingsType',toppingTypeRouter);
@@ -38,9 +38,7 @@ router.use("/api/orders", orderRouter);
 router.use("/api/stores", storeRouter);
 router.use("/api/customers", customerRoute);
 router.use("/api/order", orderRouter);
-
 router.use(authMW);
-// not found route
 router.use("*", notFoundRoute);
 
 module.exports = router;

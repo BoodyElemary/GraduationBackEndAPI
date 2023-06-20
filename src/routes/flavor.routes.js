@@ -11,6 +11,8 @@ Router.get('/:id', flavorController.show)
 
 Router.put('/:id', flavorController.update)
 
-Router.delete('/:id', flavorController.delete)
+Router.delete('/:id', flavorController.softDelete)
+
+Router.delete('/:id/hard', flavorController.hardDelete)
 
 module.exports = Router

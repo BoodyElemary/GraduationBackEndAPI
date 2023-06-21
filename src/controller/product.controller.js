@@ -1,13 +1,13 @@
 const path = require('path');
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
-
+const {uploadImageToFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
 
 class productController{
 
     index(req, res){
         try{
-            productModel.find({isDeleted: false})
+            productModel.find({isDeleted: false}).populate("category")
             .then((products)=>{
                 res.json({success: true, message: "all products data are retrieved", data: products})
             })
@@ -24,7 +24,7 @@ class productController{
             if (!req.file){
                 return res.status(400).json({success: false, message: "please upload picture file"})
             }
-            const response = await uploadImageToFirebaseStorage(req.file ,"categories")
+            const response = await uploadImageToFirebaseStorage(req.file ,"products")
             if(!response.success){
                 res.status(500).json({success:false, message: response.message})
             }
@@ -43,7 +43,7 @@ class productController{
     show (req, res){
         try{
             const id = req.params.id
-            productModel.findOne({_id: id})
+            productModel.findOne({_id: id}).populate("category")
             .then((product)=>{
                 res.json({success: true, message: "Getting product data succefully", "data": product})
             })
@@ -60,7 +60,7 @@ class productController{
             const id = req.params.id;
             let entryData = req.body
             if(req.file){
-              const response = await uploadImageToFirebaseStorage(req.file, "categories");
+              const response = await uploadImageToFirebaseStorage(req.file, "products");
               console.log(response);
 
               if (!response.success) {

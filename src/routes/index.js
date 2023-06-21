@@ -32,7 +32,7 @@ router.use("/api/toppings", toppingRouter);
 router.use("/api/categories", categoryRouter);
 router.use("/api/products", productRouter);
 router.use("/api/stores", storeRouter);
-router.use(authMW);
+// router.use(authMW);
 router.use("/api/customers", customerRoute);
 router.use("/api/orders", orderRouter);
 router.use("/api/vouchers", voucherRouter);

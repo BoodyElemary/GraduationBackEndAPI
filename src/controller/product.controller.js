@@ -19,9 +19,16 @@ class productController{
 
 
 
-    create (req,res){
+    async create (req,res){
         try{
-            productModel.create(req.body)
+            if (!req.file){
+                return res.status(400).json({success: false, message: "please upload picture file"})
+            }
+            const response = await uploadImageToFirebaseStorage(req.file ,"categories")
+            if(!response.success){
+                res.status(500).json({success:false, message: response.message})
+            }
+            productModel.create({...req.body, picture: response.downloadURL})
             .then((createdProduct)=>res.json({success: true, message: "product is created Successfully", data: createdProduct}))
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))
         }
@@ -48,10 +55,20 @@ class productController{
 
 
 
-    update (req,res){
+    async update (req,res){
         try {
-            const id = req.params.id
-            productModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
+            const id = req.params.id;
+            let entryData = req.body
+            if(req.file){
+              const response = await uploadImageToFirebaseStorage(req.file, "categories");
+              console.log(response);
+
+              if (!response.success) {
+                return res.status(500).json({ success: false, message: response.message });
+              }
+              entryData = {...req.body, picture: response.downloadURL}
+            }
+            productModel.findOneAndUpdate({_id: id}, {$set: entryData}, {new: true})
             .then((updatedProduct)=>{
               res.json({success:true, data: updatedProduct, message: "product has been Updated successfully"})
             })

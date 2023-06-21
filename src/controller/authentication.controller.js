@@ -27,9 +27,9 @@ exports.login = async (req, res, next) => {
       !customer ||
       !(await passwordHandle.compare(password, customer.password))
     )
-      next(createError("Email or password is wrong.", 401));
+      return next(createError("Email or password is wrong.", 401));
     if (!customer.isActive)
-      next(createError("Activate your email please.", 401));
+      return next(createError("Activate your email please.", 401));
     const token = jwt.create({ id: customer._id, role: "customer" });
     res.status(200).json({
       message: "success",
@@ -51,7 +51,7 @@ exports.loginAdmin = async (req, res, next) => {
           fullName: fullName,
         }));
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
-      next(createError("Email or password is wrong.", 401));
+      return next(createError("Email or password is wrong.", 401));
     const token = jwt.create({ id: admin._id, role: role }, "8h");
     if (role === "admin") {
       admin.token = "Bearer " + token;

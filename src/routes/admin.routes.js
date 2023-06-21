@@ -24,23 +24,43 @@ const validationResult = require(path.join(
   "middleware",
   "validation.mw"
 ));
-
+const { isAdmin, isSuperAdmin } = require(path.join(
+  __dirname,
+  "..",
+  "middleware",
+  "auth.mw"
+));
 const router = express.Router();
 
 router
   .route("/")
-  .get(adminCtrl.getAllAdmins)
-  .post(newAdminValidation, validationResult, adminCtrl.addNewAdmin)
-  .put(updateAdminValidation, validationResult, adminCtrl.updateAdmin);
+  .get(isSuperAdmin, adminCtrl.getAllAdmins)
+  .post(
+    isSuperAdmin,
+    newAdminValidation,
+    validationResult,
+    adminCtrl.addNewAdmin
+  )
+  .put(
+    isSuperAdmin,
+    updateAdminValidation,
+    validationResult,
+    adminCtrl.updateAdmin
+  );
 router
-  .route("/:id")
-  .all(paramIdValidation, validationResult)
+  .route("/id/:id")
+  .all(isSuperAdmin, paramIdValidation, validationResult)
   .get(adminCtrl.getAdminData)
   .delete(adminCtrl.deleteAdmin);
-router.route("/profile").get(adminCtrl.getAdminDataByProfilePath);
+router.route("/profile").get(isAdmin, adminCtrl.getAdminDataByProfilePath);
 router
   .route("/store/:store")
-  .get(storeIdValidation, validationResult, adminCtrl.getStoreAdmins);
-router.route("/search/:query").get(adminCtrl.adminSearch);
+  .get(
+    isSuperAdmin,
+    storeIdValidation,
+    validationResult,
+    adminCtrl.getStoreAdmins
+  );
+router.route("/search/:query").get(isSuperAdmin, adminCtrl.adminSearch);
 
 module.exports = router;

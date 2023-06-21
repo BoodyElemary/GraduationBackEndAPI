@@ -72,8 +72,19 @@ const isCustomer = [
     }
   },
 ];
+const isSuperAdmin = [
+  isLogin,
+  (req, res, next) => {
+    if (req.user.role === "super") {
+      next();
+    } else {
+      next(createError("not authorized!", 403));
+    }
+  },
+];
 module.exports = {
   isLogin,
   isAdmin,
   isCustomer,
+  isSuperAdmin,
 };

@@ -1,11 +1,12 @@
 const path = require("path");
 const mongoose = require("mongoose");
 const jwt = require("../util/jwt");
+const { Module } = require("module");
 const createError = require(path.join(__dirname, "..", "util", "error"));
 const Admin = mongoose.model("Admin");
 const SuperAdmin = mongoose.model("SuperAdmin");
 
-module.exports.isLogin = async (req, res, next) => {
+const isLogin = async (req, res, next) => {
   try {
     let token = req.get("authorization");
     if (!token) next(createError("Login to auth", 403));
@@ -51,28 +52,28 @@ module.exports.isLogin = async (req, res, next) => {
 // };
 
 // module.exports = [isLogin, isAuthorized];
-module.exports.isAdmin = (req, res, next) => {
-  if (req.user.role === "admin" || req.user.role === "super") {
-    next();
-  } else {
-    next(createError("not authorized!", 403));
-  }
-};
-module.exports.isCustomer = (req, res, next) => {
-  if (req.user.role === "customer" || req.user.role === "super") {
-    next();
-  } else {
-    next(createError("not authorized!", 403));
-  }
-};
-module.exports.isAdminOrCustomer = (req, res, next) => {
-  if (
-    req.user.role === "admin" ||
-    req.user.role === "customer" ||
-    req.user.role === "super"
-  ) {
-    next();
-  } else {
-    next(createError("not authorized!", 403));
-  }
+const isAdmin = [
+  isLogin,
+  (req, res, next) => {
+    if (req.user.role === "admin" || req.user.role === "super") {
+      next();
+    } else {
+      next(createError("not authorized!", 403));
+    }
+  },
+];
+const isCustomer = [
+  isLogin,
+  (req, res, next) => {
+    if (req.user.role === "customer" || req.user.role === "super") {
+      next();
+    } else {
+      next(createError("not authorized!", 403));
+    }
+  },
+];
+module.exports = {
+  isLogin,
+  isAdmin,
+  isCustomer,
 };

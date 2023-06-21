@@ -89,7 +89,7 @@ const sendEmail = (userEmail, htmlMessage) => {
   });
 };
 
-const sendResetEmail = async (userEmail, link, next) => {
+const sendResetEmail = async (userEmail, link) => {
   const mailOptions = {
     from: {
       name: "Bobazona Support",

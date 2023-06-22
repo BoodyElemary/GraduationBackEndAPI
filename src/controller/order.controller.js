@@ -8,6 +8,7 @@ const ToppingModel = mongoose.model("Topping");
 const VoucherModel = mongoose.model("Voucher");
 const { validationResult } = require("express-validator");
 const { calculateTotalPrice } = require("../util/calculateTotalPrice");
+const { checkForDuplicates } = require("../util/checkForProductsDuplication");
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
@@ -29,16 +30,33 @@ const createOrder = async (req, res, next) => {
       voucher: req.body.voucher,
     });
 
-    let totalPrice = await calculateTotalPrice(req);
+    // Check for duplication
+    let isDuplicated = checkForDuplicates(
+      req.body.orderedProducts,
+      req.body.orderedCustomizedProducts
+    );
+    if (isDuplicated) {
+      throw new Error(
+        "Error sending order (Duplication) ... Please report and try again later."
+      );
+    }
 
+    // Calculate price
+    let { subTotal, discount, totalPrice } = await calculateTotalPrice(req);
+    // console.log(subTotal);
+    // console.log(discount);
+    // console.log(totalPrice);
+    order.subTotal = subTotal;
+    order.discount = discount;
     order.totalPrice = totalPrice;
-
+    // console.log(order);
     const savedOrder = await order.save();
 
     res
       .status(201)
       .json({ success: true, message: "Order has been created successfully" });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
@@ -54,6 +72,7 @@ const getAllOrders = async (req, res) => {
     const orders = await OrderModel.find()
       .populate("customer", { _id: 1 })
       .select("pickUpTime")
+      .select("arrivalTime")
       .select("note")
       .populate("orderedProducts.product", {
         status: 0,
@@ -64,13 +83,17 @@ const getAllOrders = async (req, res) => {
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
-          path: "base flavor toppings.topping quantity",
+          path: "base flavor toppings.topping",
         },
       })
       .populate("store", { name: 1, location: 1 })
-      .populate("voucher", { percentage: 1, code: 1 })
-      .select("totalPrice")
+      // .populate("voucher", { percentage: 1, code: 1 })
       .select("status")
+      .select("subTotal")
+      .select("discount")
+      .select("totalPrice")
+      .select("createdAt")
+      // .select("updatedAt")
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
@@ -85,9 +108,11 @@ const getAllOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const order = await OrderModel.findById(req.params.id)
+      .populate("customer", { _id: 1 })
       .populate("pickUpTime")
-      .populate("status")
+      .populate("arrivalTime")
       .populate("note")
+      .populate("status")
       .populate("orderedProducts.product")
       .populate({
         path: "orderedCustomizedProducts",
@@ -95,10 +120,12 @@ const getOrderById = async (req, res) => {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store")
-      .populate("voucher")
-      .populate("totalPrice");
-
+      .populate("store", { name: 1, location: 1 })
+      .select("status")
+      .select("subTotal")
+      .select("discount")
+      .populate("totalPrice")
+      .select("createdAt");
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -110,8 +137,71 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// --------------------------- Update an Order
-const updateOrder = async (req, res) => {
+// --------------------------- Update an Order as a customer ------------------------
+const updateOrderAsCustomer = async (req, res, next) => {
+  try {
+    // Prevent pther values
+    if (
+      req.body.orderedProducts ||
+      req.body.orderedCustomizedProducts ||
+      req.body.store ||
+      req.body.voucher ||
+      req.body.customer ||
+      req.body.status ||
+      req.body.subTotal ||
+      req.body.discount ||
+      req.body.totalPrice
+    ) {
+      throw new Error("Cannot edit this field!!!");
+    }
+
+    // Calculate the time to check the editing availability 
+    let oldOrder = await OrderModel.findById(req.params.id).select(
+      "pickUpTime -_id"
+    );
+
+    let OrderPickUpTime = new Date(oldOrder.pickUpTime);
+    const PickUpTime = new Date(OrderPickUpTime.getTime());
+    const now = new Date();
+    let ONE_HOUR = 2*60 * 60 * 1000;
+    const nowTimePlusHour = new Date(now.getTime() + ONE_HOUR);
+
+    if (nowTimePlusHour >= PickUpTime) {
+      throw new Error("Cannot edit order in one hour before pickup time");
+    }
+
+    // Assign arrival time i case of pick up time editing
+    if(!req.body.arrivalTime && req.body.pickUpTime){
+      req.body.arrivalTime = req.body.pickUpTime
+    }
+
+    const order = await OrderModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        pickUpTime: req.body.pickUpTime,
+        arrivalTime: req.body.arrivalTime,
+        note: req.body.note,
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Order has been Updated successfully",
+      order,
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
+// --------------------------- Update an Order as Admin------------------------
+const updateOrderAsAdmin = async (req, res) => {
   try {
     const order = await OrderModel.findByIdAndUpdate(
       req.params.id,
@@ -171,7 +261,8 @@ const deleteOrder = async (req, res) => {
 module.exports = {
   createOrder,
   getOrderById,
-  updateOrder,
+  updateOrderAsCustomer,
+  updateOrderAsAdmin,
   deleteOrder,
   getAllOrders,
 };

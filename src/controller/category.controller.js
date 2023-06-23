@@ -38,8 +38,8 @@ class categoryController{
 
     show (req, res){
         try{
-            const id = req.params.id
-            categoryModel.findOne({_id: id})
+            const name = req.params.name
+            categoryModel.findOne({name: name})
             .then((category)=>{
                 res.json({success: true, message: "Getting category data succefully", "data": category})
             })
@@ -103,6 +103,16 @@ class categoryController{
         catch(error){
             res.status(500).json({success:false, message: error.errors})
         }
+
+    }
+
+    getProducts(req,res){
+        const id = req.params.id
+        productModel.find({category: id})
+        .then((products)=>{
+            res.json({success: true, message: "all products data are retrieved", data: products})
+        })
+        .catch((error)=>res.status(500).json({success: false , message: error.errors}))
 
     }
 

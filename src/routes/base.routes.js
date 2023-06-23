@@ -10,7 +10,7 @@ Router.post('/',upload.single("picture"), baseController.create)
 
 Router.get('/:id', baseController.show)
 
-Router.put('/:id', baseController.update)
+Router.put('/:id', upload.single("picture"),  baseController.update)
 
 Router.delete('/:id', baseController.softDelete)
 

@@ -102,7 +102,8 @@ class storeController {
 
   update(req, res) {
     try {
-      const id = req.params.name;
+      const name= req.params.name;
+      console.log(name);
       storeModel
         .findOneAndUpdate({ name: name }, { $set: req.body }, { new: true })
         .then((updatedstore) => {
@@ -127,7 +128,7 @@ class storeController {
 
   async addDay(req, res) {
     try {
-      const id = req.params.name;
+      const name = req.params.name;
       let store = await storeModel.findOne({ name: name });
       if (!store) {
         res

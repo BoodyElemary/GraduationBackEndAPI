@@ -24,19 +24,20 @@ const customerRoute = require(path.join(__dirname, 'customer.routes'));
 const authMW = require(path.join(__dirname, '..', 'middleware', 'auth.mw'));
 
 //add routes here
-router.use('/api/login', authenticationRouter);
-router.use('/api/bases', baseRouter);
-router.use('/api/flavors', flavorRouter);
-router.use('/api/toppingsType', toppingTypeRouter);
-router.use('/api/toppings', toppingRouter);
-router.use('/api/categories', categoryRouter);
-router.use('/api/products', productRouter);
-router.use('/api/stores', storeRouter);
+
+router.use("/api/login", authenticationRouter);
+router.use("/api/bases", baseRouter);
+router.use("/api/flavors", flavorRouter);
+router.use('/api/toppingsType',toppingTypeRouter);
+router.use("/api/toppings", toppingRouter);
+router.use("/api/categories", categoryRouter);
+router.use("/api/products", productRouter);
+router.use("/api/stores", storeRouter);
 // router.use(authMW);
-router.use('/api/customers', customerRoute);
-router.use('/api/orders', orderRouter);
-router.use('/api/vouchers', voucherRouter);
-router.use('/api/admin', adminRouter);
-router.use('*', notFoundRoute);
+router.use("/api/customers", customerRoute);
+router.use("/api/orders", orderRouter);
+router.use("/api/vouchers", voucherRouter);
+router.use("/api/admin", adminRouter);
+router.use("*", notFoundRoute);
 
 module.exports = router;

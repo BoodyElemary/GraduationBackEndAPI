@@ -6,12 +6,9 @@ class toppingController{
 
     index(req, res){
         try{
-            toppingModel.find({isDeleted: false}).populate("item").populate({
-                path: "toppingType",
-                populate: {
-                  path: "price",
-                },
-              })
+
+           toppingModel.find({isDeleted: false}).populate("toppingType")
+
             .then((toppings)=>{
                 res.json({success: true, message: "all toppings data are retrieved", data: toppings})
             })

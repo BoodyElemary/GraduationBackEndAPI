@@ -17,12 +17,21 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    status: {
-      type: String,
-      required: true,
-      enum: ['available', 'unavailable'],
-      default: 'available',
-    },
+    status: [
+      {
+        store: {
+          type: mongoose.SchemaTypes.ObjectId,
+          ref: "Store",
+          required: true
+        },
+        availability: {
+          type: Boolean,
+          required: true,
+          default: true
+        }
+      }
+    ],
+    
     details: {
       brief: {
         type: String,

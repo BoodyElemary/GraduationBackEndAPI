@@ -48,10 +48,21 @@ class categoryController{
         }catch(error){res.status(500).json({success:false, message: error.errors})}
     }
 
-    update (req,res){
+    async update (req,res){
         try {
-            const id = req.params.id
-            categoryModel.findOneAndUpdate({_id: id}, {$set: req.body}, {new: true})
+            const id = req.params.id;
+            let entryData = req.body
+            if(req.file){
+              const response = await uploadImageToFirebaseStorage(req.file, "categories");
+              console.log(response);
+
+              if (!response.success) {
+                return res.status(500).json({ success: false, message: response.message });
+              }
+              entryData = {...req.body, picture: response.downloadURL}
+            }
+
+            categoryModel.findOneAndUpdate({_id: id}, {$set: entryData}, {new: true})
             .then((updatedCategory)=>{
                 res.json({success:true, data: updatedCategory, message: "category has been Updated successfully"})
             })

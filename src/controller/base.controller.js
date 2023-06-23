@@ -1,3 +1,4 @@
+const { log } = require("console");
 const path = require("path");
 const baseModel = require(path.join(__dirname, "..", "models", "base.model"));
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"));
@@ -74,11 +75,22 @@ class baseController {
     }
   }
 
-  update(req, res) {
+  async update(req, res) {
     try {
       const id = req.params.id;
+      let entryData = req.body
+      if(req.file){
+        const response = await uploadImageToFirebaseStorage(req.file, "bases");
+        console.log(response);
+
+        if (!response.success) {
+          return res.status(500).json({ success: false, message: response.message });
+        }
+        entryData = {...req.body, picture: response.downloadURL}
+      }
+
       baseModel
-        .findOneAndUpdate({ _id: id }, { $set: req.body }, { new: true })
+        .findOneAndUpdate({ _id: id }, { $set: entryData}, { new: true })
         .then((updatedbase) => {
           res.json({
             success: true,

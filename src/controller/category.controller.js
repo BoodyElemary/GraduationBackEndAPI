@@ -38,8 +38,8 @@ class categoryController{
 
     show (req, res){
         try{
-            const name = req.params.name
-            categoryModel.findOne({name: name})
+            const id = req.params.id
+            categoryModel.findOne({_id: id})
             .then((category)=>{
                 res.json({success: true, message: "Getting category data succefully", "data": category})
             })

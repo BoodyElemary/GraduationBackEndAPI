@@ -19,7 +19,7 @@ const {
   getOrderById,
   updateOrderAsCustomer,
   updateOrderAsAdmin,
-  deleteOrder,
+  deleteOrderByAdmin,
   getAllOrders,
 } = require(path.join(__dirname, "..", "controller", "order.controller"));
 
@@ -33,6 +33,6 @@ Router.put("/order_edit/:id", updateOrderAsCustomer);
 
 Router.put("/order_admin_edit/:id", updateOrderAsAdmin);
 
-Router.delete("/:id", deleteOrder);
+Router.delete("/:id", deleteOrderByAdmin);
 
 module.exports = Router;

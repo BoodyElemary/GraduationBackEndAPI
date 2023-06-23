@@ -3,7 +3,9 @@ const storeSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      unique: true,
+      
     },
     location: {
       type: String,
@@ -13,27 +15,26 @@ const storeSchema = new mongoose.Schema(
       type: String,
       required: true,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           const phoneRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/gm;
           return phoneRegex.test(v);
         },
-        message: 'Invalid phone number',
-      }
-  
+        message: "Invalid phone number",
+      },
     },
     status: {
       type: String,
-      enum: ['opened', 'closed'],
-      default: 'opened',
+      enum: ["opened", "closed"],
+      default: "opened",
     },
     isHoliday: {
       type: Boolean,
-      default:0,
+      default: 0,
       required: true,
     },
   },
   { timestamps: true }
 );
 
-const storeModel = mongoose.model("Store", storeSchema)
-module.exports = storeModel
+const storeModel = mongoose.model("Store", storeSchema);
+module.exports = storeModel;

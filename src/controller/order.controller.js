@@ -42,7 +42,9 @@ const createOrder = async (req, res, next) => {
     }
 
     // Calculate price
-    let { subTotal, discount, totalPrice } = await calculateTotalPrice(req);
+    let { subTotal, discount, totalPrice } = await calculateTotalPrice(
+      req.body
+    );
     // console.log(subTotal);
     // console.log(discount);
     // console.log(totalPrice);
@@ -147,7 +149,6 @@ const updateOrderAsCustomer = async (req, res, next) => {
       req.body.store ||
       req.body.voucher ||
       req.body.customer ||
-      req.body.status ||
       req.body.subTotal ||
       req.body.discount ||
       req.body.totalPrice
@@ -155,24 +156,28 @@ const updateOrderAsCustomer = async (req, res, next) => {
       throw new Error("Cannot edit this field!!!");
     }
 
-    // Calculate the time to check the editing availability 
-    let oldOrder = await OrderModel.findById(req.params.id).select(
-      "pickUpTime -_id"
-    );
-
+    // Calculate the time to check the editing availability
+    let oldOrder = await OrderModel.findById(req.params.id)
+    .select("pickUpTime")
+    .select("status");
+    let oldOrderStatus = oldOrder.status;
     let OrderPickUpTime = new Date(oldOrder.pickUpTime);
-    const PickUpTime = new Date(OrderPickUpTime.getTime());
+    const PickUpTime = new Date(OrderPickUpTime.getTime()); 
     const now = new Date();
-    let ONE_HOUR = 2*60 * 60 * 1000;
+    let ONE_HOUR = 2 * 60 * 60 * 1000;
     const nowTimePlusHour = new Date(now.getTime() + ONE_HOUR);
+
+    if(oldOrderStatus != "pending"){
+      throw new Error("Cannot edit this order due to its status");
+    }
 
     if (nowTimePlusHour >= PickUpTime) {
       throw new Error("Cannot edit order in one hour before pickup time");
     }
 
     // Assign arrival time i case of pick up time editing
-    if(!req.body.arrivalTime && req.body.pickUpTime){
-      req.body.arrivalTime = req.body.pickUpTime
+    if (!req.body.arrivalTime && req.body.pickUpTime) {
+      req.body.arrivalTime = req.body.pickUpTime;
     }
 
     const order = await OrderModel.findByIdAndUpdate(
@@ -181,6 +186,7 @@ const updateOrderAsCustomer = async (req, res, next) => {
         pickUpTime: req.body.pickUpTime,
         arrivalTime: req.body.arrivalTime,
         note: req.body.note,
+        status: req.body.status
       },
       { new: true }
     );
@@ -201,8 +207,22 @@ const updateOrderAsCustomer = async (req, res, next) => {
 };
 
 // --------------------------- Update an Order as Admin------------------------
-const updateOrderAsAdmin = async (req, res) => {
+const updateOrderAsAdmin = async (req, res, next) => {
   try {
+    // Calculate the time to check the editing availability
+    let oldOrder = await OrderModel.findById(req.params.id)
+    .select("pickUpTime")
+
+    let OrderPickUpTime = new Date(oldOrder.pickUpTime);
+    const PickUpTime = new Date(OrderPickUpTime.getTime()); 
+    const now = new Date();
+    const nowTime = new Date(now.getTime());
+    if (nowTime >= PickUpTime) {
+      throw new Error("Cannot edit order after pickup time");
+    }
+
+
+
     const order = await OrderModel.findByIdAndUpdate(
       req.params.id,
       {
@@ -214,7 +234,6 @@ const updateOrderAsAdmin = async (req, res) => {
         orderedCustomizedProducts: req.body.orderedCustomizedProducts,
         store: req.body.store,
         voucher: req.body.voucher,
-        totalPrice: req.body.totalPrice,
       },
       { new: true }
     )
@@ -228,19 +247,30 @@ const updateOrderAsAdmin = async (req, res) => {
       .populate("store")
       .populate("voucher");
 
+    if (req.body.orderedProducts || req.body.orderedCustomizedProducts) {
+      let { subTotal, discount, totalPrice } = await calculateTotalPrice(order);
+      order.subTotal = subTotal;
+      order.discount = discount;
+      order.totalPrice = totalPrice;
+    }
+
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    res.json(order);
+    res.json({
+      success: true,
+      message: "Order has been Updated successfully",
+      order,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
 // ---------------------------- Deleting an order
-const deleteOrder = async (req, res) => {
+const deleteOrderByAdmin = async (req, res, next) => {
   try {
     const order = await OrderModel.findByIdAndDelete(req.params.id);
     console.log(order);
@@ -254,7 +284,7 @@ const deleteOrder = async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err });
+    next(err);
   }
 };
 
@@ -263,6 +293,6 @@ module.exports = {
   getOrderById,
   updateOrderAsCustomer,
   updateOrderAsAdmin,
-  deleteOrder,
+  deleteOrderByAdmin,
   getAllOrders,
 };

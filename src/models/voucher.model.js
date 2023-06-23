@@ -25,11 +25,10 @@ const voucherSchema = new mongoose.Schema(
       enum: ['applied', 'expired'],
       default: 'applied',
     },
-    isHoliday: {
+    isDeleted:{
       type: Boolean,
-      default:0,
-      required: true,
-    },
+      default:false,
+    }
   },
   { timestamps: true }
 );

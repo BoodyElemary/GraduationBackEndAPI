@@ -62,8 +62,9 @@ class storeController{
 
     show (req, res){
         try{
-            const id = req.params.id
-            storeModel.findOne({_id: id})
+            const name = req.params.name
+            console.log(name);
+            storeModel.findOne({ name: name})
             .then((store)=>{
                 if(store){
                     res.json({success: true, message: "Getting store data succefully", "data": store})

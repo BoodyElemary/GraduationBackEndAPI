@@ -6,18 +6,18 @@ const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
 const VoucherModel = mongoose.model("Voucher");
 
-exports.calculateTotalPrice = async (req) => {
+exports.calculateTotalPrice = async (arr) => {
   let subTotal = 0;
   let totalPrice = 0;
   let totalCustomizablesPrice = 0;
   let discount = 0;
   let discountPercentage = 0;
   // check if the order has any products
-  if (req.body.orderedProducts || req.body.orderedCustomizedProducts) {
+  if (arr.orderedProducts || arr.orderedCustomizedProducts) {
     //
     // Price of OrderedProducts && Total
-    if (req.body.orderedProducts) {
-      for (let product of req.body.orderedProducts) {
+    if (arr.orderedProducts) {
+      for (let product of arr.orderedProducts) {
         let productPriceObject = await ProductModel.findById(product.product, {
           price: 1,
           _id: 0,
@@ -30,8 +30,8 @@ exports.calculateTotalPrice = async (req) => {
 
     //
     // Price of Customizables && Total
-    if (req.body.orderedCustomizedProducts) {
-      for (let drink of req.body.orderedCustomizedProducts) {
+    if (arr.orderedCustomizedProducts) {
+      for (let drink of arr.orderedCustomizedProducts) {
         let basePriceData = await BaseModel.findById(drink.base, {
           price: 1,
           _id: 0,
@@ -68,8 +68,8 @@ exports.calculateTotalPrice = async (req) => {
 
   //
   // Calculate the voucher discount
-  if (req.body.voucher) {
-    let voucher = await VoucherModel.findById(req.body.voucher, {
+  if (arr.voucher) {
+    let voucher = await VoucherModel.findById(arr.voucher, {
       percentage: 1,
       _id: 0,
     });

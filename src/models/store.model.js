@@ -3,7 +3,9 @@ const storeSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      unique: true,
+      
     },
     // hero Image
     heroImage: {
@@ -25,6 +27,7 @@ const storeSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
+
       // validate: {
       //   validator: function(v) {
       //     const phoneRegex = /^\(\d{3}\)\s\d{3}-\d{4}$/gm;
@@ -81,6 +84,7 @@ const storeSchema = new mongoose.Schema(
       default: new Date().toLocaleString("en-US", {
         timeZone: "Indian/Maldives",
       }),
+
     },
   },
   // { timestamps: true }
@@ -113,8 +117,10 @@ const storeSchema = new mongoose.Schema(
     return false;
   });
 
+
   // Set the toObject and toJSON options to include virtuals
   storeSchema.set('toObject', { virtuals: true });
   storeSchema.set('toJSON', { virtuals: true })
 const storeModel = mongoose.model("Store", storeSchema)
 module.exports = storeModel
+

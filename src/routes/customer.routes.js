@@ -10,10 +10,13 @@ const {
   addVoucherToCustomer,
   getAllCustomers,
   activateAccount,
+  getCustomerProfile,
 } = require(path.join(__dirname, '..', 'controller', 'customer.controller'));
 
 // Create a new customer
 Router.post('', createCustomer);
+// Get a customer profile
+Router.get('/profile', getCustomerProfile);
 
 // Get a customer by ID
 Router.get('/:id', getCustomerById);

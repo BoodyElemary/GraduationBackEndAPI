@@ -69,9 +69,21 @@ const storeSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false
-    }
+    },
+    createdAt: {
+      type: Date,
+      default: new Date().toLocaleString("en-US", {
+        timeZone: "Indian/Maldives",
+      }),
+    },
+    updatedAt: {
+      type: Date,
+      default: new Date().toLocaleString("en-US", {
+        timeZone: "Indian/Maldives",
+      }),
+    },
   },
-  { timestamps: true }
+  // { timestamps: true }
 );
   // Define a virtual property for the status field
   // calculate status depends on Working Hours

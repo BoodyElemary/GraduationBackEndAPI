@@ -89,13 +89,11 @@ const getAllOrders = async (req, res) => {
         },
       })
       .populate("store", { name: 1, location: 1 })
-      // .populate("voucher", { percentage: 1, code: 1 })
       .select("status")
       .select("subTotal")
       .select("discount")
       .select("totalPrice")
       .select("createdAt")
-      // .select("updatedAt")
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 

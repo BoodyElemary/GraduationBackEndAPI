@@ -37,7 +37,7 @@ router.use("/api/stores", storeRouter);
 router.use("/api/customers", customerRoute);
 router.use("/api/orders", orderRouter);
 router.use("/api/vouchers", voucherRouter);
-router.use("/api/admin", adminRouter);
+router.use("/api/admins", adminRouter);
 router.use("*", notFoundRoute);
 
 module.exports = router;

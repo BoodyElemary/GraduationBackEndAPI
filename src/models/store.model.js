@@ -81,8 +81,8 @@ const storeSchema = new mongoose.Schema(
   storeSchema.virtual('status').get(function() {
     const now = new Date();
     const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' });
+    console.log(dayOfWeek);
     const workingHours = this.workingHours.find(working => working.day === dayOfWeek);
-    console.log(workingHours);
     console.log("Ana hena Status");
 
     if (!workingHours) {

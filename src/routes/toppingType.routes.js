@@ -9,6 +9,8 @@ Router.post('/', toppingTypeController.create)
 
 Router.get('/:id', toppingTypeController.show)
 
+Router.get('/:id/items', toppingTypeController.getItems)
+
 Router.put('/:id', toppingTypeController.update)
 
 Router.delete('/:id', toppingTypeController.softDelete)

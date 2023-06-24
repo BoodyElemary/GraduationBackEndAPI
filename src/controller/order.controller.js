@@ -64,29 +64,29 @@ const createOrder = async (req, res, next) => {
     order.voucher = voucherID;
 
     const { items } = req.body;
-    
-    console.log(order);
-    try {
-      const session = await stripe.checkout.sessions.create({
-        line_items: order.orderedProducts.map((item) => ({
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "myprod",
-            },
-            unit_amount: 30 * 100,
-          },
-          quantity: 7,
-        })),
-        mode: "payment",
-        success_url: "https://www.google.com/",
-        cancel_url: "https://www.youtube.com/",
-      });
 
-      res.json(session);
-    } catch (error) {
-      return error;
-    }
+    console.log(order);
+    // try {
+    //   const session = await stripe.checkout.sessions.create({
+    //     line_items: order.orderedProducts.map((product) => ({
+    //       price_data: {
+    //         currency: "usd",
+    //         product_data: {
+    //           name: "myprod",
+    //         },
+    //         unit_amount: 30 * 100,
+    //       },
+    //       quantity: 7,
+    //     })),
+    //     mode: "payment",
+    //     success_url: "https://www.google.com/",
+    //     cancel_url: "https://www.youtube.com/",
+    //   });
+
+    //   res.json(session);
+    // } catch (error) {
+    //   return error;
+    // }
 
     // Create a PaymentIntent with the order amount and currency
     // const paymentIntent = await stripe.paymentIntents.create({

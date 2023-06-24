@@ -11,12 +11,17 @@ const {
   getAllCustomers,
   activateAccount,
   getCustomerProfile,
+  updateCustomerProfile
 } = require(path.join(__dirname, '..', 'controller', 'customer.controller'));
 
 // Create a new customer
 Router.post('', createCustomer);
+
 // Get a customer profile
 Router.get('/profile', getCustomerProfile);
+
+// update a customer profile
+Router.put('/profile', updateCustomerProfile);
 
 // Get a customer by ID
 Router.get('/:id', getCustomerById);

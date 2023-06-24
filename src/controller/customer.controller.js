@@ -174,6 +174,31 @@ const getCustomerProfile = async (req, res) => {
   }
 };
 
+
+const updateCustomerProfile = async (req, res) => {
+  try {
+    // Assuming you have a token in the request headers
+    const token = req.headers.authorization;
+
+    // Verify the token and extract the user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
+    // Retrieve the customer using the user ID
+    const customer = await Customer.findByIdAndUpdate(
+      userId, {$set: req.body},
+      { new: true },
+    );
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    res.json({success:true, data: customer, message: "Profile Updated Successfully"});
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+
+};
+
 module.exports = {
   createCustomer,
   getCustomerById,
@@ -183,4 +208,5 @@ module.exports = {
   getAllCustomers,
   activateAccount,
   getCustomerProfile,
+  updateCustomerProfile
 };

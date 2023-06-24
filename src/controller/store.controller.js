@@ -102,7 +102,7 @@ class storeController {
 
   update(req, res) {
     try {
-      const name= req.params.name;
+      const name = req.params.name;
       console.log(name);
       storeModel
         .findOneAndUpdate({ name: name }, { $set: req.body }, { new: true })

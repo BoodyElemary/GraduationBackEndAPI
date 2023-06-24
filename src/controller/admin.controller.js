@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require("path");
 const mongoose = require("mongoose");
 const Admin = mongoose.model("Admin");
 const createError = require(path.join(__dirname, "..", "util", "error"));
@@ -12,7 +12,8 @@ const passwordHandle = require(path.join(
 // Get all admins
 const getAllAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find().populate("store", { name: 1 });
+    const admins = await Admin.find({})
+      .populate("store");
     res.status(200).json(admins);
   } catch (error) {
     next(error);

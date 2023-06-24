@@ -106,6 +106,16 @@ class categoryController{
 
     }
 
+    getProducts(req,res){
+        const id = req.params.id
+        productModel.find({category: id})
+        .then((products)=>{
+            res.json({success: true, message: "all products data are retrieved", data: products})
+        })
+        .catch((error)=>res.status(500).json({success: false , message: error.errors}))
+
+    }
+
 }
 
 module.exports = new categoryController()

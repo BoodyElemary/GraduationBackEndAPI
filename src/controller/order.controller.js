@@ -16,6 +16,9 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
+const { error } = require("console");
+
+
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -360,6 +363,39 @@ const deleteOrderByAdmin = async (req, res, next) => {
   }
 };
 
+// ------------------------ Retrieving customer orders
+const getCustomerOrders = async (req, res) => {
+  try {
+    // Assuming you have a token in the request headers
+    const token = req.headers.authorization;
+    // Verify the token and extract the user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
+    const order = await OrderModel.find({customer:userId})
+      .populate("orderedProducts.product")
+      .populate({
+        path: "orderedCustomizedProducts",
+        populate: {
+          path: "base flavor toppings.topping",
+        },
+      })
+      .populate("store", { name: 1, location: 1 })
+      .select("status")
+      .select("subTotal")
+      .select("discount")
+      .populate("totalPrice")
+      .select("createdAt");
+    // if (!order) {
+    //   // return res.status(404).json({ error: "Order not found" });
+    // }
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -367,4 +403,5 @@ module.exports = {
   updateOrderAsAdmin,
   deleteOrderByAdmin,
   getAllOrders,
+  getCustomerOrders
 };

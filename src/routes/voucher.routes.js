@@ -13,5 +13,6 @@ Router.get('/:id', voucherController.show)
 Router.put('/:id', voucherController.update)
 
 Router.delete('/:id', voucherController.delete)
+Router.delete('/:id', voucherController.softDelete)
 
 module.exports = Router

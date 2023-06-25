@@ -55,6 +55,29 @@ class voucherController{
             res.status(500).json({success:false, message: error.message})
         }
     }
+    softDelete(req, res) {
+        try {
+          const id = req.params.id;
+          voucherModel
+            .findOneAndUpdate(
+              { _id: id },
+              { $set: { isDeleted: true } },
+              { new: true }
+            )
+            .then((deletedvoucher) => {
+              res.json({
+                success: true,
+                data: deletedvoucher,
+                message: "Voucher has been deleted successfully",
+              });
+            })
+            .catch((error) =>
+              res.status(500).json({ success: false, message: error.errors })
+            );
+        } catch (error) {
+          res.status(500).json({ success: false, message: error.errors });
+        }
+      }
 
     delete (req,res){
         try{

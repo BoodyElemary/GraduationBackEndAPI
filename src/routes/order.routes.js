@@ -17,8 +17,9 @@ const validationResult = require(path.join(
 const {
   createOrder,
   getOrderById,
-  updateOrder,
-  deleteOrder,
+  updateOrderAsCustomer,
+  updateOrderAsAdmin,
+  deleteOrderByAdmin,
   getAllOrders,
 } = require(path.join(__dirname, "..", "controller", "order.controller"));
 
@@ -28,8 +29,10 @@ Router.route("/").post(createOrderValidator, validationResult, createOrder);
 
 Router.get("/:id", getOrderById);
 
-Router.put("/:id", updateOrder);
+Router.put("/order_edit/:id", updateOrderAsCustomer);
 
-Router.delete("/:id", deleteOrder);
+Router.put("/order_admin_edit/:id", updateOrderAsAdmin);
+
+Router.delete("/:id", deleteOrderByAdmin);
 
 module.exports = Router;

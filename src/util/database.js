@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+
 module.exports = async (callback) => {
   try {
     await mongoose.connect(process.env.DB_URI);

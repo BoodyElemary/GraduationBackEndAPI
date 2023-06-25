@@ -8,7 +8,7 @@ Router.get('/', voucherController.index)
 
 Router.post('/', voucherController.create)
 
-Router.get('/:id', voucherController.show)
+Router.get('/:code', voucherController.show)
 
 Router.put('/:id', voucherController.update)
 

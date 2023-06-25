@@ -6,20 +6,38 @@ const BaseModel = mongoose.model("Base");
 const FlavorModel = mongoose.model("Flavor");
 const ToppingModel = mongoose.model("Topping");
 const VoucherModel = mongoose.model("Voucher");
+const CustomerModel = mongoose.model("Customer");
 const { validationResult } = require("express-validator");
 const { calculateTotalPrice } = require("../util/calculateTotalPrice");
 const { checkForDuplicates } = require("../util/checkForProductsDuplication");
+const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
+const { error } = require("console");
+
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  const errors = validationResult(req.body);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+
 
   try {
+    const errors = validationResult(req.body);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
     const order = new OrderModel({
-      customer: req.body.customer,
+      customer: userId,
       pickUpTime: req.body.pickUpTime,
       arrivalTime: req.body.arrivalTime,
       status: "pending",
@@ -30,7 +48,6 @@ const createOrder = async (req, res, next) => {
       voucher: req.body.voucher,
     });
 
-    // Check for duplication
     let isDuplicated = checkForDuplicates(
       req.body.orderedProducts,
       req.body.orderedCustomizedProducts
@@ -41,25 +58,86 @@ const createOrder = async (req, res, next) => {
       );
     }
 
-    // Calculate price
-    let { subTotal, discount, totalPrice } = await calculateTotalPrice(
-      req.body
-    );
-    // console.log(subTotal);
-    // console.log(discount);
-    // console.log(totalPrice);
+    let { subTotal, discount, totalPrice, voucherCode, voucherID } =
+      await calculateTotalPrice(req.body);
+
     order.subTotal = subTotal;
     order.discount = discount;
     order.totalPrice = totalPrice;
-    // console.log(order);
-    const savedOrder = await order.save();
+    order.voucher = voucherID;
 
-    res
-      .status(201)
-      .json({ success: true, message: "Order has been created successfully" });
+    const { items } = req.body;
+    
+    console.log(order);
+    try {
+      const session = await stripe.checkout.sessions.create({
+        line_items: order.orderedProducts.map((item) => ({
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "myprod",
+            },
+            unit_amount: 30 * 100,
+          },
+          quantity: 7,
+        })),
+        mode: "payment",
+        success_url: "https://www.google.com/",
+        cancel_url: "https://www.youtube.com/",
+      });
+
+      res.json(session);
+    } catch (error) {
+      return error;
+    }
+
+    // Create a PaymentIntent with the order amount and currency
+    // const paymentIntent = await stripe.paymentIntents.create({
+    //   amount: order.totalPrice,
+    //   currency: "usd",
+    //   automatic_payment_methods: {
+    //     enabled: true,
+    //   },
+    // });
+
+    // res.send({
+    //   clientSecret: paymentIntent.client_secret,
+    // });
+
+    // const paymentIntent = await stripe.paymentIntents.create({
+    //   amount: totalPrice * 100,
+    //   currency: 'usd',
+    //   metadata: {
+    //     orderId: savedOrder._id.toString(),
+    //   },
+    // });
+
+    // Start the transaction
+    const savedOrder = await order.save({ session });
+    await CustomerModel.findByIdAndUpdate(
+      userId,
+      {
+        $push: { customerOrders: savedOrder, voucherList: voucherID },
+      },
+      { new: true, session }
+    );
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    res.status(201).json({
+      success: true,
+      message: "Order has been created successfully",
+      order: savedOrder,
+    });
   } catch (err) {
+    // Abort the transaction if there's an error
+    await session.abortTransaction();
     console.log(err);
     next(err);
+  } finally {
+    // End the session
+    session.endSession();
   }
 };
 
@@ -88,14 +166,12 @@ const getAllOrders = async (req, res) => {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
-      // .populate("voucher", { percentage: 1, code: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
       .select("totalPrice")
       .select("createdAt")
-      // .select("updatedAt")
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
@@ -158,16 +234,16 @@ const updateOrderAsCustomer = async (req, res, next) => {
 
     // Calculate the time to check the editing availability
     let oldOrder = await OrderModel.findById(req.params.id)
-    .select("pickUpTime")
-    .select("status");
+      .select("pickUpTime")
+      .select("status");
     let oldOrderStatus = oldOrder.status;
     let OrderPickUpTime = new Date(oldOrder.pickUpTime);
-    const PickUpTime = new Date(OrderPickUpTime.getTime()); 
+    const PickUpTime = new Date(OrderPickUpTime.getTime());
     const now = new Date();
     let ONE_HOUR = 2 * 60 * 60 * 1000;
     const nowTimePlusHour = new Date(now.getTime() + ONE_HOUR);
 
-    if(oldOrderStatus != "pending"){
+    if (oldOrderStatus != "pending") {
       throw new Error("Cannot edit this order due to its status");
     }
 
@@ -186,7 +262,7 @@ const updateOrderAsCustomer = async (req, res, next) => {
         pickUpTime: req.body.pickUpTime,
         arrivalTime: req.body.arrivalTime,
         note: req.body.note,
-        status: req.body.status
+        status: req.body.status,
       },
       { new: true }
     );
@@ -210,18 +286,17 @@ const updateOrderAsCustomer = async (req, res, next) => {
 const updateOrderAsAdmin = async (req, res, next) => {
   try {
     // Calculate the time to check the editing availability
-    let oldOrder = await OrderModel.findById(req.params.id)
-    .select("pickUpTime")
+    let oldOrder = await OrderModel.findById(req.params.id).select(
+      "pickUpTime"
+    );
 
     let OrderPickUpTime = new Date(oldOrder.pickUpTime);
-    const PickUpTime = new Date(OrderPickUpTime.getTime()); 
+    const PickUpTime = new Date(OrderPickUpTime.getTime());
     const now = new Date();
     const nowTime = new Date(now.getTime());
     if (nowTime >= PickUpTime) {
       throw new Error("Cannot edit order after pickup time");
     }
-
-
 
     const order = await OrderModel.findByIdAndUpdate(
       req.params.id,
@@ -273,7 +348,7 @@ const updateOrderAsAdmin = async (req, res, next) => {
 const deleteOrderByAdmin = async (req, res, next) => {
   try {
     const order = await OrderModel.findByIdAndDelete(req.params.id);
-    console.log(order);
+
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     } else {
@@ -288,6 +363,39 @@ const deleteOrderByAdmin = async (req, res, next) => {
   }
 };
 
+// ------------------------ Retrieving customer orders
+const getCustomerOrders = async (req, res) => {
+  try {
+    // Assuming you have a token in the request headers
+    const token = req.headers.authorization;
+    // Verify the token and extract the user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
+    const order = await OrderModel.find({customer:userId})
+      .populate("orderedProducts.product")
+      .populate({
+        path: "orderedCustomizedProducts",
+        populate: {
+          path: "base flavor toppings.topping",
+        },
+      })
+      .populate("store", { name: 1, location: 1 })
+      .select("status")
+      .select("subTotal")
+      .select("discount")
+      .populate("totalPrice")
+      .select("createdAt");
+    // if (!order) {
+    //   // return res.status(404).json({ error: "Order not found" });
+    // }
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -295,4 +403,5 @@ module.exports = {
   updateOrderAsAdmin,
   deleteOrderByAdmin,
   getAllOrders,
+  getCustomerOrders
 };

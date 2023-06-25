@@ -73,28 +73,18 @@ const storeSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    createdAt: {
-      type: Date,
-      default: new Date().toLocaleString("en-US", {
-        timeZone: "Indian/Maldives",
-      }),
-    },
-    updatedAt: {
-      type: Date,
-      default: new Date().toLocaleString("en-US", {
-        timeZone: "Indian/Maldives",
-      }),
-
-    },
   },
-  // { timestamps: true }
+  { timestamps: true }
 );
   // Define a virtual property for the status field
   // calculate status depends on Working Hours
   storeSchema.virtual('status').get(function() {
     const now = new Date();
     const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' });
+    console.log(dayOfWeek);
     const workingHours = this.workingHours.find(working => working.day === dayOfWeek);
+    console.log("Ana hena Status");
+
     if (!workingHours) {
       return 'closed';
     } 
@@ -111,6 +101,8 @@ const storeSchema = new mongoose.Schema(
     const now = new Date();
     const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' });
     const workingHours = this.workingHours.find(working => working.day === dayOfWeek);
+    console.log(workingHours);
+    console.log("Ana hena Holiday");
     if (!workingHours) {
       return true;
     }

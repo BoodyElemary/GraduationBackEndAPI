@@ -17,13 +17,13 @@ Router.post('/',upload.single("heroImage"), upload.single("pageImage"),storeCont
 Router.get("/:name", storeController.show);
 
 
-Router.put('/:id',upload.single("picture"), storeController.update)
+Router.put('/:name',upload.single("picture"), storeController.update)
 
-Router.put('/:id/addDay', storeController.addDay)
+Router.put('/:name/addDay', storeController.addDay)
 
-Router.delete('/:id', storeController.softDelete)
+Router.delete('/:name', storeController.softDelete)
 
-Router.delete('/:id', storeController.hardDelete)
+Router.delete('/:name', storeController.hardDelete)
 
 
 module.exports = Router;

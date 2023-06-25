@@ -85,6 +85,17 @@ class toppingTypeController{
         }
     }
 
+
+    getItems(req,res){
+        const id = req.params.id
+        toppingModel.find({toppingType: id})
+        .then((items)=>{
+            res.json({success: true, message: "all topping type items are retrieved", data: items})
+        })
+        .catch((error)=>res.status(500).json({success: false , message: error.errors}))
+
+    }
+
 }
 
 module.exports = new toppingTypeController()

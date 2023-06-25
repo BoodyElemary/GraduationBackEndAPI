@@ -12,16 +12,20 @@ const { uploadImageToFirebaseStorage } = require(path.join(
 class storeController{
  index(req, res){
         try{
-            storeModel.find()
-            .then((stores)=>{
+            storeModel
+              .find({
+                $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+              })
+              .then((stores) => {
                 res.json({
-                    success: true, 
-                    message: "all stores data are retrieved",
-                     data: stores
-                    });
-            })
-            .catch((error)=>res.status(500).json({success: false , message: error.message})
-            );
+                  success: true,
+                  message: "all stores data are retrieved",
+                  data: stores,
+                });
+              })
+              .catch((error) =>
+                res.status(500).json({ success: false, message: error.message })
+              );
 
         }catch(error){res.status(500).json({success: false, message: error.message})}
     }

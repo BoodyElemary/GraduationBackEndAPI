@@ -1,4 +1,3 @@
-const { log } = require('console');
 const path = require('path');
 const baseModel = require(path.join(__dirname, '..', 'models', 'base.model'));
 const orderModel = require(path.join(__dirname, '..', 'models', 'order.model'));
@@ -32,7 +31,7 @@ class baseController {
       if (!req.file) {
         return res
           .status(400)
-          .json({ success: false, message: 'Please upload a picture file' });
+          .json({ success:  false, message: 'Please upload a picture file' });
       }
       const response = await uploadImageToFirebaseStorage(req.file, 'bases');
       if (!response.success) {

@@ -17,6 +17,12 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    size: {
+      type: String,
+      required: true,
+      enum: ['S', 'M', 'L'],
+      default: 'S'
+    },
     status: [
       {
         store: {
@@ -31,7 +37,7 @@ const productSchema = new mongoose.Schema(
         }
       }
     ],
-    
+
     details: {
       brief: {
         type: String,

@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       float: true,
       required: true,
-      min: 0.01
+      min: 0.01,
     },
     picture: {
       type: String,
@@ -20,22 +20,22 @@ const productSchema = new mongoose.Schema(
     size: {
       type: String,
       required: true,
-      enum: ['S', 'M', 'L'],
-      default: 'S'
+      enum: ["S", "M", "L"],
+      default: "S",
     },
     status: [
       {
         store: {
           type: mongoose.SchemaTypes.ObjectId,
           ref: "Store",
-          required: true
+          required: true,
         },
         availability: {
           type: Boolean,
           required: true,
-          default: true
-        }
-      }
+          default: true,
+        },
+      },
     ],
 
     details: {
@@ -55,17 +55,15 @@ const productSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref:"Category"
+      ref: "Category",
     },
     isDeleted: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-
-const productModel = mongoose.model("Product", productSchema)
-module.exports = productModel
-
+const productModel = mongoose.model("Product", productSchema);
+module.exports = productModel;

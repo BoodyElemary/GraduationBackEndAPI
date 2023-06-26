@@ -16,17 +16,17 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const { error } = require("console");
-
+const { error, Console } = require("console");
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-
+  let session,
+    transactionCommitted = false;
 
   try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+
     const errors = validationResult(req.body);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -58,61 +58,52 @@ const createOrder = async (req, res, next) => {
       );
     }
 
-    let { subTotal, discount, totalPrice, voucherCode, voucherID } =
-      await calculateTotalPrice(req.body);
+    let {
+      subTotal,
+      discount,
+      totalPrice,
+      voucherCode,
+      voucherID,
+      finalOrderProducts,
+    } = await calculateTotalPrice(req.body);
 
     order.subTotal = subTotal;
     order.discount = discount;
     order.totalPrice = totalPrice;
     order.voucher = voucherID;
 
-    const { items } = req.body;
+    // console.log("Normalllllllllllll: " + productsArr[1]);
+    // console.log("custoooooooooooooooo: " + customProductsArr[1]);
+    // console.log("all: " + customProductsArr[1].topping);
 
-    console.log(order);
+    //
+    //
+    // Connecting to payment method
     try {
       const session = await stripe.checkout.sessions.create({
-        line_items: order.orderedProducts.map((item) => ({
+        line_items: finalOrderProducts.map((product) => ({
           price_data: {
             currency: "usd",
             product_data: {
-              name: "myprod",
+              name: product.name,
+              images: [product.picture],
             },
-            unit_amount: 30 * 100,
+            unit_amount: product.price * 100,
           },
-          quantity: 7,
+          quantity: product.quantity,
         })),
         mode: "payment",
-        success_url: "https://www.google.com/",
-        cancel_url: "https://www.youtube.com/",
+        success_url: `http://localhost:4200/app/${order._id}/success`,
+        cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
-
-      res.json(session);
+      res.json({ session: session, message: "Order Created Successfully" });
     } catch (error) {
-      return error;
+      res.send(error.status);
     }
 
-    // Create a PaymentIntent with the order amount and currency
-    // const paymentIntent = await stripe.paymentIntents.create({
-    //   amount: order.totalPrice,
-    //   currency: "usd",
-    //   automatic_payment_methods: {
-    //     enabled: true,
-    //   },
-    // });
-
-    // res.send({
-    //   clientSecret: paymentIntent.client_secret,
-    // });
-
-    // const paymentIntent = await stripe.paymentIntents.create({
-    //   amount: totalPrice * 100,
-    //   currency: 'usd',
-    //   metadata: {
-    //     orderId: savedOrder._id.toString(),
-    //   },
-    // });
-
-    // Start the transaction
+    //
+    //
+    //
     const savedOrder = await order.save({ session });
     await CustomerModel.findByIdAndUpdate(
       userId,
@@ -122,17 +113,15 @@ const createOrder = async (req, res, next) => {
       { new: true, session }
     );
 
-    // Commit the transaction
+    // commit the transaction
     await session.commitTransaction();
-
-    res.status(201).json({
-      success: true,
-      message: "Order has been created successfully",
-      order: savedOrder,
-    });
+    transactionCommitted = true;
   } catch (err) {
     // Abort the transaction if there's an error
-    await session.abortTransaction();
+    if (!transactionCommitted && session) {
+      await session.abortTransaction();
+    }
+
     console.log(err);
     next(err);
   } finally {
@@ -150,7 +139,7 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("customer", { _id: 1 }) 
+      .populate("customer", { _id: 1 })
       .select("pickUpTime")
       .select("arrivalTime")
       .select("note")
@@ -198,7 +187,7 @@ const getOrderById = async (req, res) => {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
@@ -366,33 +355,47 @@ const deleteOrderByAdmin = async (req, res, next) => {
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
+    // For Pagination
+    const page = parseInt(req.query.page) || 1; // Page number, default to 1
+    const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
+    const skip = (page - 1) * limit; // Skipped orders in a certain page
     // Assuming you have a token in the request headers
     const token = req.headers.authorization;
     // Verify the token and extract the user ID
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
+    console.log("userId :", userId);
+    let id = req.body.id;
+    const orders = await OrderModel.find({ customer: userId })
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate("orderedProducts.quantity")
 
-    const order = await OrderModel.find({customer:userId})
-      .populate("orderedProducts.product")
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
-      .populate("totalPrice")
-      .select("createdAt");
-    // if (!order) {
-    //   // return res.status(404).json({ error: "Order not found" });
-    // }
+      .select("totalPrice")
+      .select("createdAt")
+      .skip(skip)
+      .limit(limit); // Add skip and limit to the query
 
-    res.json(order);
+    res.json(orders);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log(err);
+    res.status(500).json({ error: err });
   }
 };
 
@@ -403,5 +406,5 @@ module.exports = {
   updateOrderAsAdmin,
   deleteOrderByAdmin,
   getAllOrders,
-  getCustomerOrders
+  getCustomerOrders,
 };

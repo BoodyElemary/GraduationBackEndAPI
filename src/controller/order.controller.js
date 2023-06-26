@@ -18,7 +18,6 @@ const bodyParser = require("body-parser");
 
 const { error, Console } = require("console");
 
-
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
   let session,
@@ -356,30 +355,18 @@ const deleteOrderByAdmin = async (req, res, next) => {
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
-
-    /*
+    // For Pagination
+    const page = parseInt(req.query.page) || 1; // Page number, default to 1
+    const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
+    const skip = (page - 1) * limit; // Skipped orders in a certain page
     // Assuming you have a token in the request headers
     const token = req.headers.authorization;
     // Verify the token and extract the user ID
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
-
-    const order = await OrderModel.find({ customer: userId })
-      .populate("orderedProducts.product")
-
-*/
-          // For Pagination
-      const page = parseInt(req.query.page) || 1; // Page number, default to 1
-      const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
-      const skip = (page - 1) * limit; // Skipped orders in a certain page
-      // Assuming you have a token in the request headers
-      const token = req.headers.authorization;
-      // Verify the token and extract the user ID
-      const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-      const userId = decodedToken.id;
-      console.log("userId :",userId)
-      let id=req.body.id
-    const orders = await OrderModel.find({customer:userId})
+    console.log("userId :", userId);
+    let id = req.body.id;
+    const orders = await OrderModel.find({ customer: userId })
       .select("pickUpTime")
       .select("arrivalTime")
       .select("note")
@@ -406,10 +393,8 @@ const getCustomerOrders = async (req, res) => {
       .limit(limit); // Add skip and limit to the query
 
     res.json(orders);
-  }
-
-  catch (err) {
-    console.log(err)
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err });
   }
 };

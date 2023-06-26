@@ -5,20 +5,19 @@ const storeSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      
     },
     // hero Image
     heroImage: {
       type: String,
-      required: true
+      required: true,
     },
-    map:{
+    map: {
       type: String,
-      required: true
+      required: true,
     },
-    pageImage:{
+    pageImage: {
       type: String,
-      required: true
+      required: true,
     },
     location: {
       type: String,
@@ -35,7 +34,6 @@ const storeSchema = new mongoose.Schema(
       //   },
       //   message: 'Invalid phone number',
       // }
-  
     },
     // status: {
     //   type: String,
@@ -51,27 +49,35 @@ const storeSchema = new mongoose.Schema(
       {
         day: {
           type: String,
-          enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          enum: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+          ],
           required: true,
-          unique: true
+          unique: true,
         },
         startHour: {
           type: Number,
           required: true,
-          min: 1,
-          max: 24
+          min: 0,
+          max: 24,
         },
         endHour: {
           type: Number,
           required: true,
-          min: 1,
-          max: 24
-        }
-      }
+          min: 0,
+          max: 24,
+        },
+      },
     ],
     isDeleted: {
       type: Boolean,
-      default: false
+      default: false,
     },
   },
   { timestamps: true }
@@ -110,9 +116,22 @@ const storeSchema = new mongoose.Schema(
   });
 
 
-  // Set the toObject and toJSON options to include virtuals
-  storeSchema.set('toObject', { virtuals: true });
-  storeSchema.set('toJSON', { virtuals: true })
-const storeModel = mongoose.model("Store", storeSchema)
-module.exports = storeModel
+// Define a virtual property for the isHoliday field
+// calculate holiday days depends on working Hours
+storeSchema.virtual("isHoliday").get(function () {
+  const now = new Date();
+  const dayOfWeek = now.toLocaleString("en-US", { weekday: "long" });
+  const workingHours = this.workingHours.find(
+    (working) => working.day === dayOfWeek
+  );
+  if (!workingHours) {
+    return true;
+  }
+  return false;
+});
 
+// Set the toObject and toJSON options to include virtuals
+storeSchema.set("toObject", { virtuals: true });
+storeSchema.set("toJSON", { virtuals: true });
+const storeModel = mongoose.model("Store", storeSchema);
+module.exports = storeModel;

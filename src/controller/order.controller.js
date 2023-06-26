@@ -19,11 +19,11 @@ const bodyParser = require("body-parser");
 const { error, Console } = require("console");
 
 
-
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  let session, transactionCommitted = false;
-  
+  let session,
+    transactionCommitted = false;
+
   try {
     session = await mongoose.startSession();
     session.startTransaction();
@@ -65,14 +65,13 @@ const createOrder = async (req, res, next) => {
       totalPrice,
       voucherCode,
       voucherID,
-      finalOrderProducts
+      finalOrderProducts,
     } = await calculateTotalPrice(req.body);
 
     order.subTotal = subTotal;
     order.discount = discount;
     order.totalPrice = totalPrice;
     order.voucher = voucherID;
-
 
     // console.log("Normalllllllllllll: " + productsArr[1]);
     // console.log("custoooooooooooooooo: " + customProductsArr[1]);
@@ -98,9 +97,9 @@ const createOrder = async (req, res, next) => {
         success_url: `http://localhost:4200/app/${order._id}/success`,
         cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
-      res.json({session:session, message:"Order Created Successfully"});
+      res.json({ session: session, message: "Order Created Successfully" });
     } catch (error) {
-      res.send(error.status)
+      res.send(error.status);
     }
 
     //
@@ -118,7 +117,6 @@ const createOrder = async (req, res, next) => {
     // commit the transaction
     await session.commitTransaction();
     transactionCommitted = true;
-
   } catch (err) {
     // Abort the transaction if there's an error
     if (!transactionCommitted && session) {
@@ -190,7 +188,7 @@ const getOrderById = async (req, res) => {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
@@ -358,6 +356,18 @@ const deleteOrderByAdmin = async (req, res, next) => {
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
+
+    /*
+    // Assuming you have a token in the request headers
+    const token = req.headers.authorization;
+    // Verify the token and extract the user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
+    const order = await OrderModel.find({ customer: userId })
+      .populate("orderedProducts.product")
+
+*/
           // For Pagination
       const page = parseInt(req.query.page) || 1; // Page number, default to 1
       const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
@@ -379,6 +389,7 @@ const getCustomerOrders = async (req, res) => {
         details: 0,
       })
       .populate("orderedProducts.quantity")
+
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
@@ -410,5 +421,5 @@ module.exports = {
   updateOrderAsAdmin,
   deleteOrderByAdmin,
   getAllOrders,
-  getCustomerOrders
+  getCustomerOrders,
 };

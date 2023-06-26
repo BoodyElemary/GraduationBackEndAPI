@@ -18,11 +18,11 @@ const bodyParser = require("body-parser");
 
 const { error } = require("console");
 
-
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  let session, transactionCommitted = false;
-  
+  let session,
+    transactionCommitted = false;
+
   try {
     session = await mongoose.startSession();
     session.startTransaction();
@@ -64,14 +64,13 @@ const createOrder = async (req, res, next) => {
       totalPrice,
       voucherCode,
       voucherID,
-      finalOrderProducts
+      finalOrderProducts,
     } = await calculateTotalPrice(req.body);
 
     order.subTotal = subTotal;
     order.discount = discount;
     order.totalPrice = totalPrice;
     order.voucher = voucherID;
-
 
     // console.log("Normalllllllllllll: " + productsArr[1]);
     // console.log("custoooooooooooooooo: " + customProductsArr[1]);
@@ -97,9 +96,9 @@ const createOrder = async (req, res, next) => {
         success_url: `http://localhost:4200/app/${order._id}/success`,
         cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
-      res.json({session:session, message:"Order Created Successfully"});
+      res.json({ session: session, message: "Order Created Successfully" });
     } catch (error) {
-      res.send(error.status)
+      res.send(error.status);
     }
 
     //
@@ -117,7 +116,6 @@ const createOrder = async (req, res, next) => {
     // commit the transaction
     await session.commitTransaction();
     transactionCommitted = true;
-
   } catch (err) {
     // Abort the transaction if there's an error
     if (!transactionCommitted && session) {
@@ -189,7 +187,7 @@ const getOrderById = async (req, res) => {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
@@ -363,7 +361,7 @@ const getCustomerOrders = async (req, res) => {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
-    const order = await OrderModel.find({customer:userId})
+    const order = await OrderModel.find({ customer: userId })
       .populate("orderedProducts.product")
       .populate({
         path: "orderedCustomizedProducts",
@@ -394,5 +392,5 @@ module.exports = {
   updateOrderAsAdmin,
   deleteOrderByAdmin,
   getAllOrders,
-  getCustomerOrders
+  getCustomerOrders,
 };

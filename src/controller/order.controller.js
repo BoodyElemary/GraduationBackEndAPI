@@ -16,7 +16,8 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const { error } = require("console");
+const { error, Console } = require("console");
+
 
 
 // ------------------ Controller for creating order
@@ -357,33 +358,48 @@ const deleteOrderByAdmin = async (req, res, next) => {
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
-    // Assuming you have a token in the request headers
-    const token = req.headers.authorization;
-    // Verify the token and extract the user ID
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    const userId = decodedToken.id;
-
-    const order = await OrderModel.find({customer:userId})
-      .populate("orderedProducts.product")
+          // For Pagination
+      const page = parseInt(req.query.page) || 1; // Page number, default to 1
+      const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
+      const skip = (page - 1) * limit; // Skipped orders in a certain page
+      // Assuming you have a token in the request headers
+      const token = req.headers.authorization;
+      // Verify the token and extract the user ID
+      const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+      const userId = decodedToken.id;
+      console.log("userId :",userId)
+      let id=req.body.id
+    const orders = await OrderModel.find({customer:userId})
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate("orderedProducts.quantity")
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
           path: "base flavor toppings.topping",
         },
       })
-      .populate("store", { name: 1, location: 1 })
+      .populate("store")
       .select("status")
       .select("subTotal")
       .select("discount")
-      .populate("totalPrice")
-      .select("createdAt");
-    // if (!order) {
-    //   // return res.status(404).json({ error: "Order not found" });
-    // }
+      .select("totalPrice")
+      .select("createdAt")
+      .skip(skip)
+      .limit(limit); // Add skip and limit to the query
 
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(orders);
+  }
+
+  catch (err) {
+    console.log(err)
+    res.status(500).json({ error: err });
   }
 };
 

@@ -67,7 +67,7 @@ const createOrder = async (req, res, next) => {
     order.voucher = voucherID;
 
     const { items } = req.body;
-    
+
     console.log(order);
     try {
       const session = await stripe.checkout.sessions.create({
@@ -150,7 +150,7 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("customer", { _id: 1 })
+      .populate("customer", { _id: 1 }) 
       .select("pickUpTime")
       .select("arrivalTime")
       .select("note")

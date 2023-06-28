@@ -61,6 +61,9 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    subCategory:{
+      type:String
+    }
   },
   { timestamps: true }
 );

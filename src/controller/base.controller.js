@@ -42,7 +42,7 @@ class baseController {
       baseModel
         .create({ ...req.body, picture: response.downloadURL })
         .then((createdBase) => {
-          io.emit('new-order', { message: 'A new order has been placed' });
+          
           return res.json({
             success: true,
             message: 'Base is created successfully',

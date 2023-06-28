@@ -12,7 +12,7 @@ io.on('connection', (socket) => {
 
   socket.on('create-order', (data) => {
     console.log(data);
-    socket.broadcast.emit('new-order', data)
+    socket.broadcast.emit('newOrder', data)
 
   });
 

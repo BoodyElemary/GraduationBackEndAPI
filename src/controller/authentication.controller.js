@@ -1,22 +1,22 @@
-const path = require("path");
-const mongoose = require("mongoose");
-const CustomerModel = mongoose.model("Customer");
-const Admin = mongoose.model("Admin");
-const SuperAdmin = mongoose.model("SuperAdmin");
-const jwt = require("../util/jwt");
-const mailer = require("nodemailer");
-const createError = require(path.join(__dirname, "..", "util", "error"));
+const path = require('path');
+const mongoose = require('mongoose');
+const CustomerModel = mongoose.model('Customer');
+const Admin = mongoose.model('Admin');
+const SuperAdmin = mongoose.model('SuperAdmin');
+const jwt = require('../util/jwt');
+const mailer = require('nodemailer');
+const createError = require(path.join(__dirname, '..', 'util', 'error'));
 const passwordHandle = require(path.join(
   __dirname,
-  "..",
-  "util",
-  "password-handle"
+  '..',
+  'util',
+  'password-handle',
 ));
 const { sendResetEmail } = require(path.join(
   __dirname,
-  "..",
-  "util",
-  "nodemailer"
+  '..',
+  'util',
+  'nodemailer',
 ));
 
 exports.login = async (req, res, next) => {
@@ -27,12 +27,12 @@ exports.login = async (req, res, next) => {
       !customer ||
       !(await passwordHandle.compare(password, customer.password))
     )
-      return next(createError("Email or password is wrong.", 401));
+      return next(createError('Email or password is wrong.', 401));
     if (!customer.isActive)
-      return next(createError("Activate your email please.", 401));
-    const token = jwt.create({ id: customer._id, role: "customer" });
+      return next(createError('Activate your email please.', 401));
+    const token = jwt.create({ id: customer._id, role: 'customer' });
     res.status(200).json({
-      message: "success",
+      message: 'success',
       customer,
       token,
     });
@@ -45,23 +45,23 @@ exports.loginAdmin = async (req, res, next) => {
   try {
     const { role, fullName, password } = req.body;
     let admin;
-    role === "admin"
-      ? (admin = await Admin.findOne({ fullName: fullName }))
+    role === 'admin'
+      ? (admin = await Admin.findOne({ fullName: fullName }).populate('store'))
       : (admin = await SuperAdmin.findOne({
           fullName: fullName,
         }));
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
-      return next(createError("Email or password is wrong.", 401));
-    const token = jwt.create({ id: admin._id, role: role }, "8h");
-    if (role === "admin") {
-      admin.token = "Bearer " + token;
+      return next(createError('Email or password is wrong.', 401));
+    const token = jwt.create({ id: admin._id, role: role }, '8h');
+    if (role === 'admin') {
+      admin.token = 'Bearer ' + token;
       await admin.save(); // Save the updated admin object to the database
     } else {
-      admin.token = "Bearer " + token;
+      admin.token = 'Bearer ' + token;
       await admin.save(); // Save the updated admin object to the database
     }
     res.status(200).json({
-      message: "success",
+      message: 'success',
       admin,
     });
   } catch (err) {
@@ -73,16 +73,16 @@ exports.passwordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
     const customer = await CustomerModel.findOne({ email: email });
-    if (!customer) next(createError("Email is wrong.", 401));
+    if (!customer) next(createError('Email is wrong.', 401));
     if (!customer.isActive)
-      next(createError("Activate your email please.", 401));
-    const token = jwt.create({ id: customer._id, role: "customer" });
-    const resetURL = process.env.FRONT_URL + "/reset/?token=" + token;
+      next(createError('Activate your email please.', 401));
+    const token = jwt.create({ id: customer._id, role: 'customer' });
+    const resetURL = process.env.FRONT_URL + '/reset/?token=' + token;
     const error = await sendResetEmail(email, resetURL);
     error
       ? next(error)
       : res.status(200).json({
-          message: "success",
+          message: 'success',
         });
   } catch (err) {
     next(err);

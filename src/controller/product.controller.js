@@ -9,16 +9,6 @@ class productController{
         try{
             productModel.find({isDeleted: false}).populate("category")
             .then((products)=>{
-                if(products){
-                    for (const product of products) {
-                        // split category from productName
-                        if(product.name.includes("$")){
-                            let [category, productName]= product.name.split("$")
-                            product.name=productName;
-                            product['subCategory']=category
-                        }
-                    }
-                }
                 res.json({success: true, message: "all products data are retrieved", data: products})
             })
             .catch((error)=>res.status(500).json({success: false , message: error.errors}))
@@ -55,12 +45,6 @@ class productController{
             const id = req.params.id
             productModel.findOne({_id: id}).populate("category")
             .then((product)=>{
-                if(product?.name.includes("$")){
-                    let [category, productName]= product.name.split("$")
-                    product.name=productName;
-                    product['subCategory']=category
-                }
-
                 res.json({success: true, message: "Getting product data succefully", "data": product})
             })
             .catch((error)=>res.status(500).json({success:false, message: error.errors}))

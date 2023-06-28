@@ -110,6 +110,14 @@ class categoryController{
         const id = req.params.id
         productModel.find({category: id})
         .then((products)=>{
+            for (const product of products) {
+                // split category from productName
+                if(product.name.includes("$")){
+                    let [category, productName]= product.name.split("$")
+                    product.name=productName;
+                    product['subCategory']=category
+                }
+            }
             res.json({success: true, message: "all products data are retrieved", data: products})
         })
         .catch((error)=>res.status(500).json({success: false , message: error.errors}))

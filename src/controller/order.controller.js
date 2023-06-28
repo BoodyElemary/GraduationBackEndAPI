@@ -17,7 +17,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
-const { error, Console } = require("console");
+const { error, Console } = require('console');
 
 const {io} = require("../socket")
 
@@ -49,7 +49,7 @@ const createOrder = async (req, res, next) => {
       customer: userId,
       pickUpTime: req.body.pickUpTime,
       arrivalTime: req.body.arrivalTime,
-      status: "pending",
+      status: 'pending',
       note: req.body.note,
       orderedProducts: req.body.orderedProducts,
       orderedCustomizedProducts: req.body.orderedCustomizedProducts,
@@ -59,11 +59,11 @@ const createOrder = async (req, res, next) => {
 
     let isDuplicated = checkForDuplicates(
       req.body.orderedProducts,
-      req.body.orderedCustomizedProducts
+      req.body.orderedCustomizedProducts,
     );
     if (isDuplicated) {
       throw new Error(
-        "Error sending order (Duplication) ... Please report and try again later."
+        'Error sending order (Duplication) ... Please report and try again later.',
       );
     }
 
@@ -92,7 +92,7 @@ const createOrder = async (req, res, next) => {
       const session = await stripe.checkout.sessions.create({
         line_items: finalOrderProducts.map((product) => ({
           price_data: {
-            currency: "usd",
+            currency: 'usd',
             product_data: {
               name: product.name,
               images: [product.picture],
@@ -101,7 +101,7 @@ const createOrder = async (req, res, next) => {
           },
           quantity: product.quantity,
         })),
-        mode: "payment",
+        mode: 'payment',
         success_url: `http://localhost:4200/app/${order._id}/success`,
         cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
@@ -120,7 +120,7 @@ const createOrder = async (req, res, next) => {
       {
         $push: { customerOrders: savedOrder, voucherList: voucherID },
       },
-      { new: true, session }
+      { new: true, session },
     );
 
     // commit the transaction
@@ -149,35 +149,35 @@ const getAllOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find()
-      .populate("customer", { _id: 1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .populate('customer', { _id: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
       })
-      .populate("orderedProducts.quantity")
+      .populate('orderedProducts.quantity')
       .populate({
-        path: "orderedCustomizedProducts",
+        path: 'orderedCustomizedProducts',
         populate: {
-          path: "base flavor toppings.topping",
+          path: 'base flavor toppings.topping',
         },
       })
-      .populate("store")
-      .select("status")
-      .select("subTotal")
-      .select("discount")
-      .select("totalPrice")
-      .select("createdAt")
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .select('totalPrice')
+      .select('createdAt')
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
     res.json(orders);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -185,32 +185,32 @@ const getAllOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const order = await OrderModel.findById(req.params.id)
-      .populate("customer", { _id: 1 })
-      .populate("pickUpTime")
-      .populate("arrivalTime")
-      .populate("note")
-      .populate("status")
-      .populate("orderedProducts.product")
+      .populate('customer', { _id: 1 })
+      .populate('pickUpTime')
+      .populate('arrivalTime')
+      .populate('note')
+      .populate('status')
+      .populate('orderedProducts.product')
       .populate({
-        path: "orderedCustomizedProducts",
+        path: 'orderedCustomizedProducts',
         populate: {
-          path: "base flavor toppings.topping",
+          path: 'base flavor toppings.topping',
         },
       })
-      .populate("store")
-      .select("status")
-      .select("subTotal")
-      .select("discount")
-      .populate("totalPrice")
-      .select("createdAt");
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .populate('totalPrice')
+      .select('createdAt');
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     res.json(order);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -228,13 +228,13 @@ const updateOrderAsCustomer = async (req, res, next) => {
       req.body.discount ||
       req.body.totalPrice
     ) {
-      throw new Error("Cannot edit this field!!!");
+      throw new Error('Cannot edit this field!!!');
     }
 
     // Calculate the time to check the editing availability
     let oldOrder = await OrderModel.findById(req.params.id)
-      .select("pickUpTime")
-      .select("status");
+      .select('pickUpTime')
+      .select('status');
     let oldOrderStatus = oldOrder.status;
     let OrderPickUpTime = new Date(oldOrder.pickUpTime);
     const PickUpTime = new Date(OrderPickUpTime.getTime());
@@ -242,12 +242,12 @@ const updateOrderAsCustomer = async (req, res, next) => {
     let ONE_HOUR = 2 * 60 * 60 * 1000;
     const nowTimePlusHour = new Date(now.getTime() + ONE_HOUR);
 
-    if (oldOrderStatus != "pending") {
-      throw new Error("Cannot edit this order due to its status");
+    if (oldOrderStatus != 'pending') {
+      throw new Error('Cannot edit this order due to its status');
     }
 
     if (nowTimePlusHour >= PickUpTime) {
-      throw new Error("Cannot edit order in one hour before pickup time");
+      throw new Error('Cannot edit order in one hour before pickup time');
     }
 
     // Assign arrival time i case of pick up time editing
@@ -263,16 +263,16 @@ const updateOrderAsCustomer = async (req, res, next) => {
         note: req.body.note,
         status: req.body.status,
       },
-      { new: true }
+      { new: true },
     );
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     res.json({
       success: true,
-      message: "Order has been Updated successfully",
+      message: 'Order has been Updated successfully',
       order,
     });
   } catch (err) {
@@ -286,7 +286,7 @@ const updateOrderAsAdmin = async (req, res, next) => {
   try {
     // Calculate the time to check the editing availability
     let oldOrder = await OrderModel.findById(req.params.id).select(
-      "pickUpTime"
+      'pickUpTime',
     );
 
     let OrderPickUpTime = new Date(oldOrder.pickUpTime);
@@ -294,7 +294,7 @@ const updateOrderAsAdmin = async (req, res, next) => {
     const now = new Date();
     const nowTime = new Date(now.getTime());
     if (nowTime >= PickUpTime) {
-      throw new Error("Cannot edit order after pickup time");
+      throw new Error('Cannot edit order after pickup time');
     }
 
     const order = await OrderModel.findByIdAndUpdate(
@@ -309,17 +309,17 @@ const updateOrderAsAdmin = async (req, res, next) => {
         store: req.body.store,
         voucher: req.body.voucher,
       },
-      { new: true }
+      { new: true },
     )
-      .populate("orderedProducts.product")
+      .populate('orderedProducts.product')
       .populate({
-        path: "orderedCustomizedProducts",
+        path: 'orderedCustomizedProducts',
         populate: {
-          path: "base flavor toppings.topping",
+          path: 'base flavor toppings.topping',
         },
       })
-      .populate("store")
-      .populate("voucher");
+      .populate('store')
+      .populate('voucher');
 
     if (req.body.orderedProducts || req.body.orderedCustomizedProducts) {
       let { subTotal, discount, totalPrice } = await calculateTotalPrice(order);
@@ -329,12 +329,12 @@ const updateOrderAsAdmin = async (req, res, next) => {
     }
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     res.json({
       success: true,
-      message: "Order has been Updated successfully",
+      message: 'Order has been Updated successfully',
       order,
     });
   } catch (err) {
@@ -349,11 +349,11 @@ const deleteOrderByAdmin = async (req, res, next) => {
     const order = await OrderModel.findByIdAndDelete(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     } else {
       res.status(200).json({
         success: true,
-        message: "Order has been deleted successfully",
+        message: 'Order has been deleted successfully',
       });
     }
   } catch (err) {
@@ -374,31 +374,31 @@ const getCustomerOrders = async (req, res) => {
     // Verify the token and extract the user ID
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
-    console.log("userId :", userId);
+    console.log('userId :', userId);
     let id = req.body.id;
     const orders = await OrderModel.find({ customer: userId })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
       })
-      .populate("orderedProducts.quantity")
+      .populate('orderedProducts.quantity')
 
       .populate({
-        path: "orderedCustomizedProducts",
+        path: 'orderedCustomizedProducts',
         populate: {
-          path: "base flavor toppings.topping",
+          path: 'base flavor toppings.topping',
         },
       })
-      .populate("store")
-      .select("status")
-      .select("subTotal")
-      .select("discount")
-      .select("totalPrice")
-      .select("createdAt")
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .select('totalPrice')
+      .select('createdAt')
       .skip(skip)
       .limit(limit); // Add skip and limit to the query
 
@@ -406,6 +406,47 @@ const getCustomerOrders = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err });
+  }
+};
+const getStoreOrders = async (req, res) => {
+  // For Pagination
+  const page = parseInt(req.query.page) || 1; // Page number, default to 1
+  const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
+  const skip = (page - 1) * limit; // Skipped orders in a certain page
+
+  const storeId = req.params.id; // Extract the store ID from req.params
+
+  try {
+    const orders = await OrderModel.find({ store: storeId }) // Add the store filter
+      .populate('customer', { _id: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate('orderedProducts.quantity')
+      .populate({
+        path: 'orderedCustomizedProducts',
+        populate: {
+          path: 'base flavor toppings.topping',
+        },
+      })
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .select('totalPrice')
+      .select('createdAt')
+      .skip(skip)
+      .limit(limit); // Add skip and limit to the query
+
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -417,4 +458,5 @@ module.exports = {
   deleteOrderByAdmin,
   getAllOrders,
   getCustomerOrders,
+  getStoreOrders,
 };

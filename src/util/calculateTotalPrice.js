@@ -108,7 +108,7 @@ exports.calculateTotalPrice = async (arr) => {
 
           currentProductPrice = basePrice + flavorPrice + toppingsPrice;
 
-          console.log(customDrink.topping);
+
           customProductsArr.push({
             name: currentProductName,
             price: currentProductPrice,

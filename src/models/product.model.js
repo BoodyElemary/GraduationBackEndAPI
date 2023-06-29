@@ -19,9 +19,11 @@ const productSchema = new mongoose.Schema(
     size: {
       type: String,
       required: true,
+
       enum: ['S', 'M', 'L'],
       default: 'S',
     },
+
     status: [
       {
         store: {

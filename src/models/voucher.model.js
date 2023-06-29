@@ -8,6 +8,8 @@ const voucherSchema = new mongoose.Schema(
     percentage: {
       type: Number,
       required: true,
+      min: 0.0,
+      max: 1
     },
     expireDate: {
       type: Date,
@@ -22,8 +24,8 @@ const voucherSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['applied', 'expired'],
-      default: 'applied',
+      enum: ['active', 'expired'],
+      default: 'active',
     },
     isDeleted:{
       type: Boolean,

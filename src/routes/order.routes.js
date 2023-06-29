@@ -22,11 +22,15 @@ const {
   deleteOrderByAdmin,
   getAllOrders,
   getStoreOrders,
+  getStoreOrdersById,
+  updateOrderStatus,
 } = require(path.join(__dirname, '..', 'controller', 'order.controller'));
 
 Router.get('/', getAllOrders);
 
-Router.get('/stores/:id', getStoreOrders);
+Router.get('/sotresOrders', getStoreOrders);
+
+Router.get('/stores/:id', getStoreOrdersById);
 
 Router.route('/').post(createOrderValidator, validationResult, createOrder);
 
@@ -35,6 +39,8 @@ Router.get('/:id', getOrderById);
 Router.put('/order_edit/:id', updateOrderAsCustomer);
 
 Router.put('/order_admin_edit/:id', updateOrderAsAdmin);
+
+Router.put('/:orderId/status', updateOrderStatus);
 
 Router.delete('/:id', deleteOrderByAdmin);
 

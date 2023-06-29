@@ -1,37 +1,31 @@
 const mongoose = require("mongoose");
-const path = require("path");
 const OrderModel = mongoose.model("Order");
-const ProductModel = mongoose.model("Product");
-const BaseModel = mongoose.model("Base");
-const FlavorModel = mongoose.model("Flavor");
-const ToppingModel = mongoose.model("Topping");
-const VoucherModel = mongoose.model("Voucher");
 const CustomerModel = mongoose.model("Customer");
 const { validationResult } = require("express-validator");
 const { calculateTotalPrice } = require("../util/calculateTotalPrice");
 const { checkForDuplicates } = require("../util/checkForProductsDuplication");
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
+// const endpointSecret =
+//   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 
-const { error, Console } = require("console");
+// Used Variables
+let currentOrder;
+let currentUserId;
+let currentVoucherId;
 
+//
+//
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  let session,
-    transactionCommitted = false;
+  // Validating the order
+  const errors = validationResult(req.body);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
-    session = await mongoose.startSession();
-    session.startTransaction();
-
-    const errors = validationResult(req.body);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
+    // Getting User ID
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
@@ -48,6 +42,7 @@ const createOrder = async (req, res, next) => {
       voucher: req.body.voucher,
     });
 
+    // Checking for duplicated products IDs
     let isDuplicated = checkForDuplicates(
       req.body.orderedProducts,
       req.body.orderedCustomizedProducts
@@ -58,6 +53,7 @@ const createOrder = async (req, res, next) => {
       );
     }
 
+    // Calculating Total Price
     let {
       subTotal,
       discount,
@@ -72,64 +68,76 @@ const createOrder = async (req, res, next) => {
     order.totalPrice = totalPrice;
     order.voucher = voucherID;
 
-    // console.log("Normalllllllllllll: " + productsArr[1]);
-    // console.log("custoooooooooooooooo: " + customProductsArr[1]);
-    // console.log("all: " + customProductsArr[1].topping);
-
     //
     //
     // Connecting to payment method
-    try {
-      const session = await stripe.checkout.sessions.create({
-        line_items: finalOrderProducts.map((product) => ({
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: product.name,
-              images: [product.picture],
-            },
-            unit_amount: product.price * 100,
+    const session = await stripe.checkout.sessions.create({
+      line_items: finalOrderProducts.map((product) => ({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: product.name,
+            images: [product.picture],
           },
-          quantity: product.quantity,
-        })),
-        mode: "payment",
-        success_url: `http://localhost:4200/app/${order._id}/success`,
-        cancel_url: `http://localhost:4200/app/${order._id}/fail`,
-      });
-      res.json({ session: session, message: "Order Created Successfully" });
-    } catch (error) {
-      res.send(error.status);
-    }
+          unit_amount: Math.round(product.price * 100),
+        },
+        quantity: product.quantity,
+      })),
+      mode: "payment",
+      success_url: `http://localhost:4200/app/${order._id}/success`,
+      cancel_url: `http://localhost:4200/app/${order._id}/fail`,
+    });
 
-    //
-    //
-    //
-    const savedOrder = await order.save({ session });
-    await CustomerModel.findByIdAndUpdate(
-      userId,
-      {
-        $push: { customerOrders: savedOrder, voucherList: voucherID },
-      },
-      { new: true, session }
-    );
-
-    // commit the transaction
-    await session.commitTransaction();
-    transactionCommitted = true;
-  } catch (err) {
-    // Abort the transaction if there's an error
-    if (!transactionCommitted && session) {
-      await session.abortTransaction();
-    }
-
-    console.log(err);
-    next(err);
-  } finally {
-    // End the session
-    session.endSession();
+    // Setting Current Order Variables
+    currentOrder = order;
+    currentUserId = userId;
+    currentVoucherId = voucherID;
+    res.json({ session: session, message: "Order Ready for payment" });
+  } catch (error) {
+    console.log(error);
+    res.send(error.status);
   }
 };
 
+//
+//
+// ------------------ Controller for creating order
+const confirmedOrder = async (req, res, next) => {
+  try {
+    //
+    // Checking for Status
+    let paymentStatus = req.body.data.object.payment_status;
+    switch (paymentStatus) {
+      case "paid":
+        //
+        // Saving order and updating customer
+        const savedOrder = await currentOrder.save();
+        await CustomerModel.findByIdAndUpdate(
+          currentUserId,
+          {
+            $push: {
+              customerOrders: savedOrder,
+              voucherList: currentVoucherId,
+            },
+          },
+          { new: true }
+        );
+
+        res.json({ message: "Order Placed Successfully" });
+        break;
+
+      default:
+        res.json({ message: "Error Processing Payment" });
+        break;
+    }
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+//
+//
 // ----------------- Get All orders with pagination
 const getAllOrders = async (req, res) => {
   // For Pagination
@@ -171,6 +179,8 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+//
+//
 // ------------------------ Retrieving single order by id
 const getOrderById = async (req, res) => {
   try {
@@ -204,6 +214,8 @@ const getOrderById = async (req, res) => {
   }
 };
 
+//
+//
 // --------------------------- Update an Order as a customer ------------------------
 const updateOrderAsCustomer = async (req, res, next) => {
   try {
@@ -271,6 +283,8 @@ const updateOrderAsCustomer = async (req, res, next) => {
   }
 };
 
+//
+//
 // --------------------------- Update an Order as Admin------------------------
 const updateOrderAsAdmin = async (req, res, next) => {
   try {
@@ -333,6 +347,8 @@ const updateOrderAsAdmin = async (req, res, next) => {
   }
 };
 
+//
+//
 // ---------------------------- Deleting an order
 const deleteOrderByAdmin = async (req, res, next) => {
   try {
@@ -352,6 +368,8 @@ const deleteOrderByAdmin = async (req, res, next) => {
   }
 };
 
+//
+//
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
@@ -407,4 +425,5 @@ module.exports = {
   deleteOrderByAdmin,
   getAllOrders,
   getCustomerOrders,
+  confirmedOrder,
 };

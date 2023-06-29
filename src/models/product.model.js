@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema(
       required: true,
       enum: ["S", "M", "L"],
       default: "S",
-    },
+    }, 
     status: [
       {
         store: {

@@ -29,6 +29,7 @@ app.use(cors()); // Enable CORS for all routes
 app.use(routes);
 app.use(errorMW);
 
+
 io.on('connection', (socket) => {
   console.log('testing');
 });

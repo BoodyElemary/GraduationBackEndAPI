@@ -443,12 +443,10 @@ const getStoreOrdersById = async (req, res) => {
 const getStoreOrders = async (req, res) => {
   try {
     // For Pagination
-    const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
-    const skip = parseInt(req.query.skip) || 0; // Skipped orders, default to 0
+    const limit = parseInt(req.query.limit) || 10; 
+    const skip = parseInt(req.query.skip) || 0;
 
-    // Assuming you have a token in the request headers
     const token = req.headers.authorization;
-    // Verify the token and extract the user ID
     console.log(token);
     const decodedToken = jwt.verify(
       token.replace('Bearer ', ''),
@@ -457,8 +455,7 @@ const getStoreOrders = async (req, res) => {
     const storeId = decodedToken.storeId;
     console.log('storeId:', storeId);
 
-    const count = await OrderModel.countDocuments({ store: storeId }); // Total number of orders
-
+    const count = await OrderModel.countDocuments({ store: storeId }); 
     const orders = await OrderModel.find({ store: storeId })
       .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
@@ -483,10 +480,8 @@ const getStoreOrders = async (req, res) => {
       .select('totalPrice')
       .select('createdAt')
       .skip(skip)
-      .limit(limit); // Add skip and limit to the query
-
-    res.json({ orders, total: count }); // Include total count in the response
-  } catch (err) {
+      .limit(limit); 
+    res.json({ orders, total: count }); 
     console.log(err);
     res.status(500).json({ error: err });
   }

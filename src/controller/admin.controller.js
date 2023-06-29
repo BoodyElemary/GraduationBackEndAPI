@@ -12,7 +12,9 @@ const passwordHandle = require(path.join(
 // Get all admins
 const getAllAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find({}).populate('store');
+    const admins = await Admin.find({})
+      .populate("store");
+    console.log(admins);
     res.status(200).json(admins);
   } catch (error) {
     next(error);
@@ -57,7 +59,9 @@ const deleteAdmin = async (req, res, next) => {
 const getAdminData = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const admin = await Admin.findById(id).populate('store', { name: 1 });
+
+    const admin = await Admin.findById(id).populate("store");
+
     res.status(200).json(admin);
   } catch (error) {
     next(error);
@@ -68,7 +72,9 @@ const getAdminData = async (req, res, next) => {
 const getAdminDataByProfilePath = async (req, res, next) => {
   try {
     const { user } = req;
-    const admin = await Admin.findById(user.id).populate('store'); // To be stored in auth middleware
+
+    const admin = await Admin.findById(user._id).populate("store"); // To be stored in auth middleware
+
     res.status(200).json(admin);
   } catch (error) {
     next(error);

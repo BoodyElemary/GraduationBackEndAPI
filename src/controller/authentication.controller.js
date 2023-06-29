@@ -45,7 +45,9 @@ exports.loginAdmin = async (req, res, next) => {
   try {
     const { role, fullName, password } = req.body;
     let admin;
-    role === 'admin'
+
+    role === "admin"
+
       ? (admin = await Admin.findOne({ fullName: fullName }).populate('store'))
       : (admin = await SuperAdmin.findOne({
           fullName: fullName,

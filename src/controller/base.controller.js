@@ -1,7 +1,7 @@
 const path = require('path');
 const baseModel = require(path.join(__dirname, '..', 'models', 'base.model'));
 const orderModel = require(path.join(__dirname, '..', 'models', 'order.model'));
-const { uploadImageToFirebaseStorage } = require(path.join(
+const { uploadImageToFirebaseStorage, deleteImageFromFirebaseStorage } = require(path.join(
   __dirname,
   'uploadFile.controller',
 ));
@@ -42,7 +42,7 @@ class baseController {
       baseModel
         .create({ ...req.body, picture: response.downloadURL })
         .then((createdBase) => {
-          
+
           return res.json({
             success: true,
             message: 'Base is created successfully',
@@ -92,6 +92,10 @@ class baseController {
     try {
       const id = req.params.id;
       let entryData = req.body;
+      let base = await baseModel.findOne({_id: id})
+      if (!base){
+        return res.status(404).json({ success: false, message: "base doesn't exist" })
+      }
       if (req.file) {
         const response = await uploadImageToFirebaseStorage(req.file, 'bases');
         console.log(response);
@@ -102,11 +106,13 @@ class baseController {
             .json({ success: false, message: response.message });
         }
         entryData = { ...req.body, picture: response.downloadURL };
+        await deleteImageFromFirebaseStorage(base.picture)
+
       }
 
       baseModel
         .findOneAndUpdate({ _id: id }, { $set: entryData }, { new: true })
-        .then((updatedbase) => {
+        .then(async(updatedbase) => {
           res.json({
             success: true,
             data: updatedbase,
@@ -145,12 +151,13 @@ class baseController {
     }
   }
 
-  hardDelete(req, res) {
+  async hardDelete(req, res) {
     try {
       const id = req.params.id;
       baseModel
         .findOneAndDelete({ _id: id })
-        .then((deletedbase) => {
+        .then(async(deletedbase) => {
+          await deleteImageFromFirebaseStorage(deletedbase.picture)
           orderModel
             .deleteMany({ base: id })
             .then(() =>
@@ -160,15 +167,21 @@ class baseController {
                 message: 'Base has been deleted Permanently',
               }),
             )
-            .catch((error) =>
-              res.status(500).json({ success: false, message: error }),
+            .catch((error) =>{
+              console.log(error);
+              res.status(500).json({ success: false, message: error })
+            }
             );
         })
-        .catch((error) =>
-          res.status(500).json({ succe: false, message: error }),
+        .catch((error) =>{
+          console.log(error);
+          res.status(500).json({ success: false, message: error })
+        }
         );
     } catch (error) {
-      res.status(500).json({ sucs: false, message: error });
+        console.log(error);
+        res.status(500).json({ success: false, message: error })
+
     }
   }
 }

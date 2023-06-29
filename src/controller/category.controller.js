@@ -2,7 +2,7 @@ const path = require('path');
 const categoryModel = require(path.join(__dirname, "..", "models", "category.model"))
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
-const {uploadImageToFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
+const {uploadImageToFirebaseStorage, deleteImageFromFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
 
 class categoryController{
 
@@ -52,14 +52,18 @@ class categoryController{
         try {
             const id = req.params.id;
             let entryData = req.body
+            let category = await categoryModel.findOne({_id: id})
+            if (!category){
+                return res.status(404).json({ success: false, message: "category doesn't exist" })
+            }
             if(req.file){
               const response = await uploadImageToFirebaseStorage(req.file, "categories");
-              console.log(response);
 
               if (!response.success) {
                 return res.status(500).json({ success: false, message: response.message });
               }
               entryData = {...req.body, picture: response.downloadURL}
+              await deleteImageFromFirebaseStorage(category.picture)
             }
 
             categoryModel.findOneAndUpdate({_id: id}, {$set: entryData}, {new: true})
@@ -92,6 +96,7 @@ class categoryController{
             const id = req.params.id
             categoryModel.findOneAndDelete({_id: id})
             .then(async(deletedCategory)=>{
+                await deleteImageFromFirebaseStorage(deletedCategory.picture)
                 let deletedProducts = await productModel.deleteMany({category: id})
                 orderModel.deleteMany({'orderedProducts.product': { $in: deletedProducts.map(t => t._id)}})
                 .then(()=>res.json({success:true, data: deletedCategory, message: "category has been deleted Permanently"}))

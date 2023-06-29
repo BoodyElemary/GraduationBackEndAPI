@@ -442,10 +442,8 @@ const getStoreOrdersById = async (req, res) => {
 
 const getStoreOrders = async (req, res) => {
   try {
-    // For Pagination
-    const limit = parseInt(req.query.limit) || 10; 
+    const limit = parseInt(req.query.limit) || 10;
     const skip = parseInt(req.query.skip) || 0;
-
     const token = req.headers.authorization;
     console.log(token);
     const decodedToken = jwt.verify(
@@ -455,7 +453,8 @@ const getStoreOrders = async (req, res) => {
     const storeId = decodedToken.storeId;
     console.log('storeId:', storeId);
 
-    const count = await OrderModel.countDocuments({ store: storeId }); 
+    const count = await OrderModel.countDocuments({ store: storeId });
+
     const orders = await OrderModel.find({ store: storeId })
       .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
@@ -480,8 +479,10 @@ const getStoreOrders = async (req, res) => {
       .select('totalPrice')
       .select('createdAt')
       .skip(skip)
-      .limit(limit); 
-    res.json({ orders, total: count }); 
+      .limit(limit);
+
+    res.json({ orders, total: count });
+  } catch (err) {
     console.log(err);
     res.status(500).json({ error: err });
   }

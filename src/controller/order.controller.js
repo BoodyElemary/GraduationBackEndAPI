@@ -105,7 +105,7 @@ const createOrder = async (req, res, next) => {
         success_url: `http://localhost:4200/app/${order._id}/success`,
         cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
-      io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
+      //io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
       res.json({ session: session, message: "Order Created Successfully" });
     } catch (error) {
       res.send(error.status);

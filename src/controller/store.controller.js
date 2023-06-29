@@ -4,7 +4,7 @@ const storeModel = require(path.join(__dirname, "..", "models", "store.model"));
 const adminModel = require(path.join(__dirname, "..", "models", "admin.model"));
 
 // const storeModel = require('../models/store.model')
-const { uploadImageToFirebaseStorage } = require(path.join(
+const { uploadImageToFirebaseStorage, deleteImageFromFirebaseStorage } = require(path.join(
   __dirname,
   "uploadFile.controller"
 ));
@@ -31,33 +31,39 @@ class storeController {
 
   async create(req, res) {
     try {
-      // if (!req.files) {
-      //     return res
-      //       .status(400)
-      //       .json({ success: false, message: "please upload  pictures " });
-      //   }
-      const response = await uploadImageToFirebaseStorage(
-        req.files.heroImage,
+      if (!req.files.heroImage) {
+        return res
+          .status(400)
+          .json({ success: false, message: "please upload  heroImage " });
+      }
+      else if (!req.files.pageImage) {
+        return res
+          .status(400)
+          .json({ success: false, message: "please upload  pageImage " });
+        }
+      const heroImageResponse = await uploadImageToFirebaseStorage(
+        req.files.heroImage[0],
         "stores/heroImage"
       );
-      const responseImage = await uploadImageToFirebaseStorage(
-        req.files.pageImage,
+      if (!heroImageResponse.success) {
+        res.status(500).json({ success: false, message: heroImageResponse.message });
+      }
+
+      const pageImageResponse = await uploadImageToFirebaseStorage(
+        req.files.pageImage[0],
         "stores/pageImage"
       );
-
-      if (!response.success) {
-        res.status(500).json({ success: false, message: response.message });
-      }
-      if (!responseImage.success) {
+      if (!pageImageResponse.success) {
         res
           .status(500)
-          .json({ success: false, message: responseImage.message });
+          .json({ success: false, message: pageImageResponse.message });
       }
+
       storeModel
         .create({
           ...req.body,
-          heroImage: response.downloadURL,
-          pageImage: responseImage.downloadURL,
+          heroImage: heroImageResponse.downloadURL,
+          pageImage: pageImageResponse.downloadURL,
         })
         .then((createdStore) =>
           res.json({
@@ -66,11 +72,22 @@ class storeController {
             data: createdStore,
           })
         )
-        .catch((error) =>
-          res.status(500).json({ success: false, message: error.errors })
+        .catch((error) =>{
+          if (error.code === 11000 && error.keyPattern && error.keyValue) {
+            const { keyPattern, keyValue } = error;
+            const duplicateField = Object.keys(keyPattern)[0];
+            const duplicateValue = keyValue[duplicateField];
+            return res.status(400).json({
+              success: false,
+              message: `The ${duplicateField} '${duplicateValue}' already exists`,
+            });
+          }
+          res.status(500).json({ success: false, message: error})
+        }
         );
     } catch (error) {
-      res.status(500).json({ success: false, message: error.errors });
+
+      res.status(500).json({ success: false, message: error});
     }
   }
 
@@ -100,23 +117,51 @@ class storeController {
     }
   }
 
-  update(req, res) {
+  async update(req, res) {
     try {
       const name = req.params.name;
+      let entryData = req.body
+      let store = await storeModel.findOne({name:name})
+      if (!store){
+        return res.status(404).json({ success: false, message: "store doesn't exist" })
+      }
+      if(req.files){
+        if(req.files.heroImage){
+          const heroImageResponse = await uploadImageToFirebaseStorage(
+            req.files.heroImage[0],
+            "stores/heroImage"
+          );
+
+          if (!heroImageResponse.success) {
+            return res.status(500).json({ success: false, message: heroImageResponse.message });
+          }
+          entryData.heroImage = heroImageResponse.downloadURL
+          await deleteImageFromFirebaseStorage(store.heroImage)
+        }
+
+        if(req.files.pageImage){
+          const pageImageResponse = await uploadImageToFirebaseStorage(
+            req.files.pageImage[0],
+            "stores/pageImage"
+          );
+
+          if (!pageImageResponse.success) {
+            return res.status(500).json({ success: false, message: pageImageResponse.message });
+          }
+          entryData.pageImage = pageImageResponse.downloadURL
+
+          await deleteImageFromFirebaseStorage(store.pageImage)
+        }
+      }
       console.log(name);
       storeModel
-        .findOneAndUpdate({ name: name }, { $set: req.body }, { new: true })
+        .findOneAndUpdate({ name: name }, { $set: entryData }, { new: true })
         .then((updatedstore) => {
-          if (updatedstore)
             res.json({
               success: true,
               data: updatedstore,
               message: "store has been Updated successfully",
             });
-          else
-            res
-              .status(404)
-              .json({ success: false, message: "store doesn't exist" });
         })
         .catch((error) =>
           res.status(500).json({ success: false, message: error.message })
@@ -157,7 +202,7 @@ class storeController {
 
   softDelete(req, res) {
     try {
-      const id = req.params.name;
+      const name = req.params.name;
       storeModel
         .findOneAndUpdate(
           { name: name },
@@ -179,12 +224,14 @@ class storeController {
     }
   }
 
-  hardDelete(req, res) {
+  async hardDelete(req, res) {
     try {
-      const id = req.params.name;
+      const name = req.params.name;
       storeModel
         .findOneAndDelete({ name: name })
-        .then((deletedstore) => {
+        .then(async(deletedstore) => {
+          await deleteImageFromFirebaseStorage(deletedstore.heroImage)
+          await deleteImageFromFirebaseStorage(deletedstore.pageImage)
           adminModel
             .deleteMany({ base: id })
             .then(() =>

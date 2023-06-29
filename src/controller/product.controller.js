@@ -1,7 +1,7 @@
 const path = require('path');
 const productModel = require(path.join(__dirname, "..", "models", "product.model"))
 const orderModel = require(path.join(__dirname, "..", "models", "order.model"))
-const {uploadImageToFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
+const {uploadImageToFirebaseStorage, deleteImageFromFirebaseStorage} = require(path.join(__dirname, "uploadFile.controller"))
 
 class productController{
 
@@ -59,6 +59,10 @@ class productController{
         try {
             const id = req.params.id;
             let entryData = req.body
+            let product = await productModel.findOne({_id: id})
+            if (!product){
+                return res.status(404).json({ success: false, message: "product doesn't exist" })
+            }
             if(req.file){
               const response = await uploadImageToFirebaseStorage(req.file, "products");
               console.log(response);
@@ -67,6 +71,7 @@ class productController{
                 return res.status(500).json({ success: false, message: response.message });
               }
               entryData = {...req.body, picture: response.downloadURL}
+              await deleteImageFromFirebaseStorage(product.picture)
             }
             productModel.findOneAndUpdate({_id: id}, {$set: entryData}, {new: true})
             .then((updatedProduct)=>{
@@ -98,6 +103,7 @@ class productController{
             const id = req.params.id
             productModel.findOneAndDelete({_id: id})
             .then(async(deletedProduct)=>{
+                await deleteImageFromFirebaseStorage(deletedProduct.picture)
                 orderModel.deleteMany({'orderedProducts.product': id})
                 .then(()=>res.json({success:true, data: deletedProduct, message: "Product has been deleted Permanently"}))
                 .catch((error)=>res.status(500).json({success:false, message: error.errors}))

@@ -5,7 +5,6 @@ const productSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
     },
     price: {
       type: Number,
@@ -61,6 +60,9 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    subCategory:{
+      type:String
+    }
   },
   { timestamps: true },
 );

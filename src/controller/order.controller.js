@@ -1,22 +1,25 @@
-const mongoose = require('mongoose');
-const path = require('path');
-const OrderModel = mongoose.model('Order');
-const ProductModel = mongoose.model('Product');
-const BaseModel = mongoose.model('Base');
-const FlavorModel = mongoose.model('Flavor');
-const ToppingModel = mongoose.model('Topping');
-const VoucherModel = mongoose.model('Voucher');
-const CustomerModel = mongoose.model('Customer');
-const { validationResult } = require('express-validator');
-const { calculateTotalPrice } = require('../util/calculateTotalPrice');
-const { checkForDuplicates } = require('../util/checkForProductsDuplication');
-const jwt = require('jsonwebtoken');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const mongoose = require("mongoose");
+const path = require("path");
+const OrderModel = mongoose.model("Order");
+const ProductModel = mongoose.model("Product");
+const BaseModel = mongoose.model("Base");
+const FlavorModel = mongoose.model("Flavor");
+const ToppingModel = mongoose.model("Topping");
+const VoucherModel = mongoose.model("Voucher");
+const CustomerModel = mongoose.model("Customer");
+const AdminModel = mongoose.model("Admin");
+const { validationResult } = require("express-validator");
+const { calculateTotalPrice } = require("../util/calculateTotalPrice");
+const { checkForDuplicates } = require("../util/checkForProductsDuplication");
+const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const { error, Console } = require('console');
+
+const {io} = require("../socket")
 
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
@@ -36,6 +39,12 @@ const createOrder = async (req, res, next) => {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
+    let admin = await AdminModel.findOne({store: req.body.store})
+    if(!admin){
+      throw new Error(
+        "This Store Admin Doesn't Exist"
+      );
+    }
     const order = new OrderModel({
       customer: userId,
       pickUpTime: req.body.pickUpTime,
@@ -88,7 +97,7 @@ const createOrder = async (req, res, next) => {
               name: product.name,
               images: [product.picture],
             },
-            unit_amount: product.price * 100,
+            unit_amount: Math.round(product.price * 100),
           },
           quantity: product.quantity,
         })),
@@ -96,7 +105,8 @@ const createOrder = async (req, res, next) => {
         success_url: `http://localhost:4200/app/${order._id}/success`,
         cancel_url: `http://localhost:4200/app/${order._id}/fail`,
       });
-      res.json({ session: session, message: 'Order Created Successfully' });
+      io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
+      res.json({ session: session, message: "Order Created Successfully" });
     } catch (error) {
       res.send(error.status);
     }

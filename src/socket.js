@@ -1,9 +1,6 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const server = require('http').createServer(app);
-// const io = require('socket.io')(server);
 const { Server } = require('socket.io');
+const {app} = require("./app");
+const server = require('http').createServer(app);
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -11,12 +8,15 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log('testing');
-});
+  console.log('new user connected');
 
-module.exports = {
-  app,
-  server,
-  io,
-  cors,
-};
+  socket.on('create-order', (data) => {
+    console.log(data);
+    socket.broadcast.emit('newOrder', data)
+
+  });
+
+});
+module.exports = {io, server, app};
+
+

@@ -52,7 +52,12 @@ exports.loginAdmin = async (req, res, next) => {
         }));
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
       return next(createError('Email or password is wrong.', 401));
-    const token = jwt.create({ id: admin._id, role: role }, '8h');
+    // console.log('storeId', admin.store._id);
+    // console.log('admminId', admin._id);
+    const token = jwt.create(
+      { id: admin._id, role: role, storeId: admin.store._id },
+      '8h',
+    );
     if (role === 'admin') {
       admin.token = 'Bearer ' + token;
       await admin.save(); // Save the updated admin object to the database

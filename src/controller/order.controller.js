@@ -398,7 +398,7 @@ const getCustomerOrders = async (req, res) => {
     res.status(500).json({ error: err });
   }
 };
-const getStoreOrders = async (req, res) => {
+const getStoreOrdersById = async (req, res) => {
   // For Pagination
   const page = parseInt(req.query.page) || 1; // Page number, default to 1
   const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
@@ -408,7 +408,7 @@ const getStoreOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find({ store: storeId }) // Add the store filter
-      .populate('customer', { _id: 1 })
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
       .select('arrivalTime')
       .select('note')
@@ -440,6 +440,92 @@ const getStoreOrders = async (req, res) => {
   }
 };
 
+const getStoreOrders = async (req, res) => {
+  try {
+    // For Pagination
+    const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
+    const skip = parseInt(req.query.skip) || 0; // Skipped orders, default to 0
+
+    // Assuming you have a token in the request headers
+    const token = req.headers.authorization;
+    // Verify the token and extract the user ID
+    console.log(token);
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+    console.log('storeId:', storeId);
+
+    const count = await OrderModel.countDocuments({ store: storeId }); // Total number of orders
+
+    const orders = await OrderModel.find({ store: storeId })
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate('orderedProducts.quantity')
+      .populate({
+        path: 'orderedCustomizedProducts',
+        populate: {
+          path: 'base flavor toppings.topping',
+        },
+      })
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .select('totalPrice')
+      .select('createdAt')
+      .skip(skip)
+      .limit(limit); // Add skip and limit to the query
+
+    res.json({ orders, total: count }); // Include total count in the response
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err });
+  }
+};
+
+const updateOrderStatus = async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  try {
+    const token = req.headers.authorization;
+    // Verify the token and extract the role
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    console.log(decodedToken.role);
+    const role = decodedToken.role;
+
+    // Check if the role is admin
+    if (role !== 'admin' && role !== 'super') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const order = await OrderModel.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    order.status = status;
+    await order.save();
+
+    res.json({ message: 'Order status updated successfully', order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -449,4 +535,6 @@ module.exports = {
   getAllOrders,
   getCustomerOrders,
   getStoreOrders,
+  getStoreOrdersById,
+  updateOrderStatus,
 };

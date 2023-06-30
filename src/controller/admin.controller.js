@@ -57,7 +57,7 @@ const deleteAdmin = async (req, res, next) => {
 const getAdminData = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const admin = await Admin.findById(id).populate('store', { name: 1 });
+    const admin = await Admin.findById(id).populate('store');
     res.status(200).json(admin);
   } catch (error) {
     next(error);

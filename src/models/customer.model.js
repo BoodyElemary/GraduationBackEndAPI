@@ -50,6 +50,10 @@ const customerSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     activationToken: {
       type: String,
       required: true,

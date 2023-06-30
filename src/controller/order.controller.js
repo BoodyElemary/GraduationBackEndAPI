@@ -1,23 +1,21 @@
-const mongoose = require("mongoose");
-const OrderModel = mongoose.model("Order");
-const CustomerModel = mongoose.model("Customer");
-const AdminModel = mongoose.model("Admin");
-const { validationResult } = require("express-validator");
-const { calculateTotalPrice } = require("../util/calculateTotalPrice");
-const { checkForDuplicates } = require("../util/checkForProductsDuplication");
-const jwt = require("jsonwebtoken");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const mongoose = require('mongoose');
+const OrderModel = mongoose.model('Order');
+const CustomerModel = mongoose.model('Customer');
+const AdminModel = mongoose.model('Admin');
+const { validationResult } = require('express-validator');
+const { calculateTotalPrice } = require('../util/calculateTotalPrice');
+const { checkForDuplicates } = require('../util/checkForProductsDuplication');
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // const endpointSecret =
 //   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 const { error, Console } = require('console');
-const {io} = require("../socket")
-
+const { io } = require('../socket');
 
 // Used Variables
 let currentOrder;
 let currentUserId;
 let currentVoucherId;
-
 
 //
 //
@@ -35,11 +33,9 @@ const createOrder = async (req, res, next) => {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
-    let admin = await AdminModel.findOne({store: req.body.store})
-    if(!admin){
-      throw new Error(
-        "This Store Admin Doesn't Exist"
-      );
+    let admin = await AdminModel.findOne({ store: req.body.store });
+    if (!admin) {
+      throw new Error("This Store Admin Doesn't Exist");
     }
     const order = new OrderModel({
       customer: userId,
@@ -85,7 +81,7 @@ const createOrder = async (req, res, next) => {
     const session = await stripe.checkout.sessions.create({
       line_items: finalOrderProducts.map((product) => ({
         price_data: {
-          currency: "usd",
+          currency: 'usd',
           product_data: {
             name: product.name,
             images: [product.picture],
@@ -94,7 +90,7 @@ const createOrder = async (req, res, next) => {
         },
         quantity: product.quantity,
       })),
-      mode: "payment",
+      mode: 'payment',
       success_url: `http://localhost:4200/app/${order._id}/success`,
       cancel_url: `http://localhost:4200/app/${order._id}/fail`,
     });
@@ -103,7 +99,7 @@ const createOrder = async (req, res, next) => {
     currentOrder = order;
     currentUserId = userId;
     currentVoucherId = voucherID;
-    res.json({ session: session, message: "Order Ready for payment" });
+    res.json({ session: session, message: 'Order Ready for payment' });
   } catch (error) {
     console.log(error);
     res.send(error.status);
@@ -119,7 +115,7 @@ const confirmedOrder = async (req, res, next) => {
     // Checking for Status
     let paymentStatus = req.body.data.object.payment_status;
     switch (paymentStatus) {
-      case "paid":
+      case 'paid':
         //
         // Saving order and updating customer
         const savedOrder = await currentOrder.save();
@@ -131,14 +127,14 @@ const confirmedOrder = async (req, res, next) => {
               voucherList: currentVoucherId,
             },
           },
-          { new: true }
+          { new: true },
         );
 
-        res.json({ message: "Order Placed Successfully" });
+        res.json({ message: 'Order Placed Successfully' });
         break;
 
       default:
-        res.json({ message: "Error Processing Payment" });
+        res.json({ message: 'Error Processing Payment' });
         break;
     }
   } catch (error) {

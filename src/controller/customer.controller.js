@@ -209,6 +209,15 @@ const updateCustomerProfile = async (req, res) => {
       message: "Profile Updated Successfully",
     });
   } catch (error) {
+    if (error.code === 11000 && error.keyPattern && error.keyValue) {
+      const { keyPattern, keyValue } = error;
+      const duplicateField = Object.keys(keyPattern)[0];
+      const duplicateValue = keyValue[duplicateField];
+      return res.status(400).json({
+        success: false,
+        message: `The ${duplicateField} '${duplicateValue}' already exists`,
+      });
+    }
     res.status(400).json({ success: false, message: error.message });
   }
 };

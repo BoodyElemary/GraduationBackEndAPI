@@ -37,7 +37,7 @@ passport.use(new facbookStrategy(
         if (existCustomer) {
             // If the customer already exists, log them in
             const token = jwt.create({ id: existCustomer._id, role: 'customer' });
-            return cb(null, { token, existCustomer, message: 'success' });
+            return cb(null, { token, existCustomer, message: 'Login Successfully' });
             } else {
             const activationToken = uuid.v4();
             // console.log(profile);
@@ -51,8 +51,11 @@ passport.use(new facbookStrategy(
                 activationToken: activationToken,
                 isActive: true
             });
+            await Customer.findByIdAndUpdate(newCustomer._id, {
+              $unset: { activationToken: "" },
+            });
             const token = jwt.create({ id: newCustomer._id, role: 'customer' });
-            return cb(null, {token, newCustomer, message: 'success'});
+            return cb(null, {token, newCustomer, message: 'Login Successfully'});
         }
     }
 ))
@@ -65,16 +68,14 @@ passport.use(new GoogleStrategy({
     scope: ['email', 'profile']
   },
   async function (accessToken, refreshToken, profile, cb){
-    // console.log(profile);
     const existCustomer = await Customer.findOne({email: profile.emails[0].value})
 
     if (existCustomer) {
         // If the customer already exists, log them in
         const token = jwt.create({ id: existCustomer._id, role: 'customer' });
-        return cb(null, { token, customer: existCustomer, message: 'success' });
+        return cb(null, { token, customer: existCustomer, message: 'Login Successfully' });
       } else {
         const activationToken = uuid.v4();
-        console.log(profile);
         const password = generatePassword();
         const newCustomer = await Customer.create({
             email: profile.emails[0].value,
@@ -85,8 +86,11 @@ passport.use(new GoogleStrategy({
             activationToken: activationToken,
             isActive: true
         });
+        await Customer.findByIdAndUpdate(newCustomer._id, {
+          $unset: { activationToken: "" },
+        });
         const token = jwt.create({ id: newCustomer._id, role: 'customer' });
-        return cb(null, {token, customer: newCustomer, message: 'success'});
+        return cb(null, {token, customer: newCustomer, message: 'Login Successfully'});
     }
 }
   ));

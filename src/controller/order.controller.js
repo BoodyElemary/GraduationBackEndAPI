@@ -1,49 +1,41 @@
-const mongoose = require("mongoose");
-const path = require("path");
-const OrderModel = mongoose.model("Order");
-const ProductModel = mongoose.model("Product");
-const BaseModel = mongoose.model("Base");
-const FlavorModel = mongoose.model("Flavor");
-const ToppingModel = mongoose.model("Topping");
-const VoucherModel = mongoose.model("Voucher");
-const CustomerModel = mongoose.model("Customer");
-const AdminModel = mongoose.model("Admin");
-const { validationResult } = require("express-validator");
-const { calculateTotalPrice } = require("../util/calculateTotalPrice");
-const { checkForDuplicates } = require("../util/checkForProductsDuplication");
-const jwt = require("jsonwebtoken");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-
+const mongoose = require('mongoose');
+const OrderModel = mongoose.model('Order');
+const CustomerModel = mongoose.model('Customer');
+const AdminModel = mongoose.model('Admin');
+const { validationResult } = require('express-validator');
+const { calculateTotalPrice } = require('../util/calculateTotalPrice');
+const { checkForDuplicates } = require('../util/checkForProductsDuplication');
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// const endpointSecret =
+//   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 const { error, Console } = require('console');
+const { io } = require('../socket');
 
-const {io} = require("../socket")
+// Used Variables
+let currentOrder;
+let currentUserId;
+let currentVoucherId;
 
+//
+//
 // ------------------ Controller for creating order
 const createOrder = async (req, res, next) => {
-  let session,
-    transactionCommitted = false;
+  // Validating the order
+  const errors = validationResult(req.body);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
-    session = await mongoose.startSession();
-    session.startTransaction();
-
-    const errors = validationResult(req.body);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
+    // Getting User ID
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
-    let admin = await AdminModel.findOne({store: req.body.store})
-    if(!admin){
-      throw new Error(
-        "This Store Admin Doesn't Exist"
-      );
+    let admin = await AdminModel.findOne({ store: req.body.store });
+    if (!admin) {
+      throw new Error("This Store Admin Doesn't Exist");
     }
     const order = new OrderModel({
       customer: userId,
@@ -57,6 +49,7 @@ const createOrder = async (req, res, next) => {
       voucher: req.body.voucher,
     });
 
+    // Checking for duplicated products IDs
     let isDuplicated = checkForDuplicates(
       req.body.orderedProducts,
       req.body.orderedCustomizedProducts,
@@ -67,6 +60,7 @@ const createOrder = async (req, res, next) => {
       );
     }
 
+    // Calculating Total Price
     let {
       subTotal,
       discount,
@@ -81,24 +75,20 @@ const createOrder = async (req, res, next) => {
     order.totalPrice = totalPrice;
     order.voucher = voucherID;
 
-    // console.log("Normalllllllllllll: " + productsArr[1]);
-    // console.log("custoooooooooooooooo: " + customProductsArr[1]);
-    // console.log("all: " + customProductsArr[1].topping);
-
     //
     //
     // Connecting to payment method
-    try {
-      const session = await stripe.checkout.sessions.create({
-        line_items: finalOrderProducts.map((product) => ({
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: product.name,
-              images: [product.picture],
-            },
-            unit_amount: Math.round(product.price * 100),
+    const session = await stripe.checkout.sessions.create({
+      line_items: finalOrderProducts.map((product) => ({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: product.name,
+            images: [product.picture],
           },
+
+                    unit_amount: Math.round(product.price * 100),
+        },
           quantity: product.quantity,
         })),
         mode: 'payment',
@@ -111,35 +101,56 @@ const createOrder = async (req, res, next) => {
       res.send(error.status);
     }
 
-    //
-    //
-    //
-    const savedOrder = await order.save({ session });
-    await CustomerModel.findByIdAndUpdate(
-      userId,
-      {
-        $push: { customerOrders: savedOrder, voucherList: voucherID },
-      },
-      { new: true, session },
-    );
-
-    // commit the transaction
-    await session.commitTransaction();
-    transactionCommitted = true;
-  } catch (err) {
-    // Abort the transaction if there's an error
-    if (!transactionCommitted && session) {
-      await session.abortTransaction();
-    }
-
-    console.log(err);
-    next(err);
-  } finally {
-    // End the session
-    session.endSession();
+    // Setting Current Order Variables
+    currentOrder = order;
+    currentUserId = userId;
+    currentVoucherId = voucherID;
+    res.json({ session: session, message: 'Order Ready for payment' });
+  } catch (error) {
+    console.log(error);
+    res.send(error.status);
   }
 };
 
+//
+//
+// ------------------ Controller for creating order
+const confirmedOrder = async (req, res, next) => {
+  try {
+    //
+    // Checking for Status
+    let paymentStatus = req.body.data.object.payment_status;
+    switch (paymentStatus) {
+      case 'paid':
+        //
+        // Saving order and updating customer
+        const savedOrder = await currentOrder.save();
+        await CustomerModel.findByIdAndUpdate(
+          currentUserId,
+          {
+            $push: {
+              customerOrders: savedOrder,
+              voucherList: currentVoucherId,
+            },
+          },
+          { new: true },
+        );
+
+        res.json({ message: 'Order Placed Successfully' });
+        break;
+
+      default:
+        res.json({ message: 'Error Processing Payment' });
+        break;
+    }
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+//
+//
 // ----------------- Get All orders with pagination
 const getAllOrders = async (req, res) => {
   // For Pagination
@@ -181,6 +192,8 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+//
+//
 // ------------------------ Retrieving single order by id
 const getOrderById = async (req, res) => {
   try {
@@ -214,6 +227,8 @@ const getOrderById = async (req, res) => {
   }
 };
 
+//
+//
 // --------------------------- Update an Order as a customer ------------------------
 const updateOrderAsCustomer = async (req, res, next) => {
   try {
@@ -281,6 +296,8 @@ const updateOrderAsCustomer = async (req, res, next) => {
   }
 };
 
+//
+//
 // --------------------------- Update an Order as Admin------------------------
 const updateOrderAsAdmin = async (req, res, next) => {
   try {
@@ -343,6 +360,8 @@ const updateOrderAsAdmin = async (req, res, next) => {
   }
 };
 
+//
+//
 // ---------------------------- Deleting an order
 const deleteOrderByAdmin = async (req, res, next) => {
   try {
@@ -362,6 +381,8 @@ const deleteOrderByAdmin = async (req, res, next) => {
   }
 };
 
+//
+//
 // ------------------------ Retrieving customer orders
 const getCustomerOrders = async (req, res) => {
   try {
@@ -408,7 +429,7 @@ const getCustomerOrders = async (req, res) => {
     res.status(500).json({ error: err });
   }
 };
-const getStoreOrders = async (req, res) => {
+const getStoreOrdersById = async (req, res) => {
   // For Pagination
   const page = parseInt(req.query.page) || 1; // Page number, default to 1
   const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
@@ -418,7 +439,7 @@ const getStoreOrders = async (req, res) => {
 
   try {
     const orders = await OrderModel.find({ store: storeId }) // Add the store filter
-      .populate('customer', { _id: 1 })
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
       .select('arrivalTime')
       .select('note')
@@ -450,6 +471,127 @@ const getStoreOrders = async (req, res) => {
   }
 };
 
+const getStoreOrders = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
+    const token = req.headers.authorization;
+    console.log(token);
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+    console.log('storeId:', storeId);
+
+    const count = await OrderModel.countDocuments({ store: storeId });
+
+    const orders = await OrderModel.find({ store: storeId })
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
+        status: 0,
+        category: 0,
+        details: 0,
+      })
+      .populate('orderedProducts.quantity')
+      .populate({
+        path: 'orderedCustomizedProducts',
+        populate: [{ path: 'base' }, { path: 'flavor' }],
+
+        populate: {
+          path: 'toppings',
+          populate: {
+            path: 'toppingType',
+            select: 'price type',
+          },
+        },
+      })
+      .populate('store')
+      .select('status')
+      .select('subTotal')
+      .select('discount')
+      .select('totalPrice')
+      .select('createdAt')
+      .skip(skip)
+      .limit(limit);
+
+    res.json({ orders, total: count });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err });
+  }
+};
+const searchStoreOrders = async (req, res, next) => {
+  try {
+    const { firstName, lastName } = req.query;
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+
+    const searchCriteria = { store: storeId };
+
+    if (firstName) {
+      searchCriteria['customer.firstName'] = {
+        $regex: firstName,
+        $options: 'i',
+      };
+    }
+
+    if (lastName) {
+      searchCriteria['customer.lastName'] = {
+        $regex: lastName,
+        $options: 'i',
+      };
+    }
+
+    const orders = await OrderModel.find(searchCriteria).populate('customer');
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+const updateOrderStatus = async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  try {
+    const token = req.headers.authorization;
+    // Verify the token and extract the role
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    console.log(decodedToken.role);
+    const role = decodedToken.role;
+
+    // Check if the role is admin
+    if (role !== 'admin' && role !== 'super') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const order = await OrderModel.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    order.status = status;
+    await order.save();
+
+    res.json({ message: 'Order status updated successfully', order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -458,5 +600,9 @@ module.exports = {
   deleteOrderByAdmin,
   getAllOrders,
   getCustomerOrders,
+  confirmedOrder,
   getStoreOrders,
+  getStoreOrdersById,
+  updateOrderStatus,
+  searchStoreOrders,
 };

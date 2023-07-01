@@ -8,6 +8,7 @@ const passwordHandle = require(path.join(
   'util',
   'password-handle',
 ));
+const jwt = require('jsonwebtoken');
 
 // Get all admins
 const getAllAdmins = async (req, res, next) => {
@@ -57,7 +58,7 @@ const deleteAdmin = async (req, res, next) => {
 const getAdminData = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const admin = await Admin.findById(id).populate('store', { name: 1 });
+    const admin = await Admin.findById(id).populate('store');
     res.status(200).json(admin);
   } catch (error) {
     next(error);
@@ -67,7 +68,12 @@ const getAdminData = async (req, res, next) => {
 // Get admin data by profile path
 const getAdminDataByProfilePath = async (req, res, next) => {
   try {
-    const { user } = req;
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const user = decodedToken;
     const admin = await Admin.findById(user.id).populate('store'); // To be stored in auth middleware
     res.status(200).json(admin);
   } catch (error) {

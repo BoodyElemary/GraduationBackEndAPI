@@ -30,6 +30,8 @@ exports.login = async (req, res, next) => {
       return next(createError('Email or password is wrong.', 401));
     if (!customer.isActive)
       return next(createError('Activate your email please.', 401));
+    if (customer.isBlocked)
+      return next(createError("This account has been closed.", 401));
     const token = jwt.create({ id: customer._id, role: 'customer' });
     res.status(200).json({
       message: 'success',
@@ -45,14 +47,26 @@ exports.loginAdmin = async (req, res, next) => {
   try {
     const { role, fullName, password } = req.body;
     let admin;
-    role === 'admin'
+
+    role === "admin"
+
       ? (admin = await Admin.findOne({ fullName: fullName }).populate('store'))
       : (admin = await SuperAdmin.findOne({
           fullName: fullName,
         }));
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
       return next(createError('Email or password is wrong.', 401));
-    const token = jwt.create({ id: admin._id, role: role }, '8h');
+    // console.log('storeId', admin.store._id);
+    // console.log('adminId', admin._id)
+    let token;
+    if (role === 'admin') {
+      token = jwt.create(
+        { id: admin._id, role: role, storeId: admin.store._id },
+        '8h',
+      );
+    } else if (role === 'super') {
+      token = jwt.create({ id: admin._id, role: role }, '8h');
+    }
     if (role === 'admin') {
       admin.token = 'Bearer ' + token;
       await admin.save(); // Save the updated admin object to the database

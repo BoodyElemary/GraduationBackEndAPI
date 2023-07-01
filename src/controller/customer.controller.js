@@ -56,7 +56,6 @@ const getCustomerById = async (req, res) => {
 // Update a customer
 const updateCustomer = async (req, res) => {
   try {
-    const { firstName, lastName, email } = req.body;
     const customer = await Customer.findByIdAndUpdate(
       req.params.id,
       {
@@ -65,6 +64,7 @@ const updateCustomer = async (req, res) => {
         email: req.body.email,
         customerOrders: req.body.consoleOrders,
         voucherList: req.body.voucherList,
+        isBlocked: req.body.isBlocked,
       },
       { new: true }
     );
@@ -176,7 +176,6 @@ const getCustomerProfile = async (req, res) => {
   }
 };
 
-
 const updateCustomerProfile = async (req, res) => {
   try {
     // Assuming you have a token in the request headers
@@ -188,17 +187,21 @@ const updateCustomerProfile = async (req, res) => {
 
     // Retrieve the customer using the user ID
     const customer = await Customer.findByIdAndUpdate(
-      userId, {$set: req.body},
-      { new: true },
+      userId,
+      { $set: req.body },
+      { new: true }
     );
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: "Customer not found" });
     }
-    res.json({success:true, data: customer, message: "Profile Updated Successfully"});
+    res.json({
+      success: true,
+      data: customer,
+      message: "Profile Updated Successfully",
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
-
 };
 
 module.exports = {
@@ -210,5 +213,5 @@ module.exports = {
   getAllCustomers,
   activateAccount,
   getCustomerProfile,
-  updateCustomerProfile
+  updateCustomerProfile,
 };

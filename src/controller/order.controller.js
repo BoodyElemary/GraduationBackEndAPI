@@ -86,14 +86,20 @@ const createOrder = async (req, res, next) => {
             name: product.name,
             images: [product.picture],
           },
-          unit_amount: Math.round(product.price * 100),
+
+                    unit_amount: Math.round(product.price * 100),
         },
-        quantity: product.quantity,
-      })),
-      mode: 'payment',
-      success_url: `http://localhost:4200/app/${order._id}/success`,
-      cancel_url: `http://localhost:4200/app/${order._id}/fail`,
-    });
+          quantity: product.quantity,
+        })),
+        mode: 'payment',
+        success_url: `http://localhost:4200/app/${order._id}/success`,
+        cancel_url: `http://localhost:4200/app/${order._id}/fail`,
+      });
+      //io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
+      res.json({ session: session, message: "Order Created Successfully" });
+    } catch (error) {
+      res.send(error.status);
+    }
 
     // Setting Current Order Variables
     currentOrder = order;

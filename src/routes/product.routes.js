@@ -1,19 +1,31 @@
-const express = require('express')
+const express = require('express');
 const path = require('path');
-const productController = require(path.join(__dirname, "..", "controller", "product.controller"))
-const {upload} = require(path.join(__dirname, "..", "controller", "uploadFile.controller"))
-const Router = express.Router({mergeParams:true})
+const productController = require(path.join(
+  __dirname,
+  '..',
+  'controller',
+  'product.controller',
+));
+const { upload } = require(path.join(
+  __dirname,
+  '..',
+  'controller',
+  'uploadFile.controller',
+));
+const Router = express.Router({ mergeParams: true });
 
-Router.get('/', productController.index)
+Router.get('/', productController.index);
 
-Router.post('/', upload.single("picture"), productController.create)
+Router.post('/', upload.single('picture'), productController.create);
 
-Router.get('/:id', productController.show)
+Router.get('/:id', productController.show);
 
-Router.put('/:id', upload.single("picture"), productController.update)
+Router.put('/:id', upload.single('picture'), productController.update);
 
-Router.delete('/:id', productController.softDelete)
+Router.put('/updateStoreProductStatus/:id', productController.editStoreStatus);
 
-Router.delete('/:id/hard', productController.hardDelete)
+Router.delete('/:id', productController.softDelete);
 
-module.exports = Router
+Router.delete('/:id/hard', productController.hardDelete);
+
+module.exports = Router;

@@ -1,23 +1,21 @@
-const mongoose = require("mongoose");
-const OrderModel = mongoose.model("Order");
-const CustomerModel = mongoose.model("Customer");
-const AdminModel = mongoose.model("Admin");
-const { validationResult } = require("express-validator");
-const { calculateTotalPrice } = require("../util/calculateTotalPrice");
-const { checkForDuplicates } = require("../util/checkForProductsDuplication");
-const jwt = require("jsonwebtoken");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const mongoose = require('mongoose');
+const OrderModel = mongoose.model('Order');
+const CustomerModel = mongoose.model('Customer');
+const AdminModel = mongoose.model('Admin');
+const { validationResult } = require('express-validator');
+const { calculateTotalPrice } = require('../util/calculateTotalPrice');
+const { checkForDuplicates } = require('../util/checkForProductsDuplication');
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // const endpointSecret =
 //   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 const { error, Console } = require('console');
-const {io} = require("../socket")
-
+const { io } = require('../socket');
 
 // Used Variables
 let currentOrder;
 let currentUserId;
 let currentVoucherId;
-
 
 //
 //
@@ -35,11 +33,9 @@ const createOrder = async (req, res, next) => {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
-    let admin = await AdminModel.findOne({store: req.body.store})
-    if(!admin){
-      throw new Error(
-        "This Store Admin Doesn't Exist"
-      );
+    let admin = await AdminModel.findOne({ store: req.body.store });
+    if (!admin) {
+      throw new Error("This Store Admin Doesn't Exist");
     }
     const order = new OrderModel({
       customer: userId,
@@ -85,25 +81,31 @@ const createOrder = async (req, res, next) => {
     const session = await stripe.checkout.sessions.create({
       line_items: finalOrderProducts.map((product) => ({
         price_data: {
-          currency: "usd",
+          currency: 'usd',
           product_data: {
             name: product.name,
             images: [product.picture],
           },
-          unit_amount: Math.round(product.price * 100),
+
+                    unit_amount: Math.round(product.price * 100),
         },
-        quantity: product.quantity,
-      })),
-      mode: "payment",
-      success_url: `http://localhost:4200/app/${order._id}/success`,
-      cancel_url: `http://localhost:4200/app/${order._id}/fail`,
-    });
+          quantity: product.quantity,
+        })),
+        mode: 'payment',
+        success_url: `http://localhost:4200/app/${order._id}/success`,
+        cancel_url: `http://localhost:4200/app/${order._id}/fail`,
+      });
+      //io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
+      res.json({ session: session, message: "Order Created Successfully" });
+    } catch (error) {
+      res.send(error.status);
+    }
 
     // Setting Current Order Variables
     currentOrder = order;
     currentUserId = userId;
     currentVoucherId = voucherID;
-    res.json({ session: session, message: "Order Ready for payment" });
+    res.json({ session: session, message: 'Order Ready for payment' });
   } catch (error) {
     console.log(error);
     res.send(error.status);
@@ -119,7 +121,7 @@ const confirmedOrder = async (req, res, next) => {
     // Checking for Status
     let paymentStatus = req.body.data.object.payment_status;
     switch (paymentStatus) {
-      case "paid":
+      case 'paid':
         //
         // Saving order and updating customer
         const savedOrder = await currentOrder.save();
@@ -131,14 +133,14 @@ const confirmedOrder = async (req, res, next) => {
               voucherList: currentVoucherId,
             },
           },
-          { new: true }
+          { new: true },
         );
 
-        res.json({ message: "Order Placed Successfully" });
+        res.json({ message: 'Order Placed Successfully' });
         break;
 
       default:
-        res.json({ message: "Error Processing Payment" });
+        res.json({ message: 'Error Processing Payment' });
         break;
     }
   } catch (error) {
@@ -497,8 +499,14 @@ const getStoreOrders = async (req, res) => {
       .populate('orderedProducts.quantity')
       .populate({
         path: 'orderedCustomizedProducts',
+        populate: [{ path: 'base' }, { path: 'flavor' }],
+
         populate: {
-          path: 'base flavor toppings.topping',
+          path: 'toppings',
+          populate: {
+            path: 'toppingType',
+            select: 'price type',
+          },
         },
       })
       .populate('store')
@@ -514,6 +522,39 @@ const getStoreOrders = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err });
+  }
+};
+const searchStoreOrders = async (req, res, next) => {
+  try {
+    const { firstName, lastName } = req.query;
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+
+    const searchCriteria = { store: storeId };
+
+    if (firstName) {
+      searchCriteria['customer.firstName'] = {
+        $regex: firstName,
+        $options: 'i',
+      };
+    }
+
+    if (lastName) {
+      searchCriteria['customer.lastName'] = {
+        $regex: lastName,
+        $options: 'i',
+      };
+    }
+
+    const orders = await OrderModel.find(searchCriteria).populate('customer');
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
 };
 
@@ -563,4 +604,5 @@ module.exports = {
   getStoreOrders,
   getStoreOrdersById,
   updateOrderStatus,
+  searchStoreOrders,
 };

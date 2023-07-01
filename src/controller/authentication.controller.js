@@ -30,6 +30,8 @@ exports.login = async (req, res, next) => {
       return next(createError('Email or password is wrong.', 401));
     if (!customer.isActive)
       return next(createError('Activate your email please.', 401));
+    if (customer.isBlocked)
+      return next(createError("This account has been closed.", 401));
     const token = jwt.create({ id: customer._id, role: 'customer' });
     res.status(200).json({
       message: 'success',
@@ -55,14 +57,14 @@ exports.loginAdmin = async (req, res, next) => {
     if (!admin || !(await passwordHandle.compare(password, admin.password)))
       return next(createError('Email or password is wrong.', 401));
     // console.log('storeId', admin.store._id);
-    // console.log('admminId', admin._id)
+    // console.log('adminId', admin._id)
     let token;
-    if (role == 'admin') {
+    if (role === 'admin') {
       token = jwt.create(
         { id: admin._id, role: role, storeId: admin.store._id },
         '8h',
       );
-    } else if (role == 'super') {
+    } else if (role === 'super') {
       token = jwt.create({ id: admin._id, role: role }, '8h');
     }
     if (role === 'admin') {

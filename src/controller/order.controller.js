@@ -173,8 +173,9 @@ const getAllOrders = async (req, res) => {
 
 // ------------------------ Retrieving single order by id
 const getOrderById = async (req, res) => {
+   console.log(req);
   try {
-    const order = await OrderModel.findById(req.params.id)
+    const order = await OrderModel.findById(String(req.params.id))
       .populate("customer", { _id: 1 })
       .populate("pickUpTime")
       .populate("arrivalTime")

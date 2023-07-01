@@ -493,8 +493,14 @@ const getStoreOrders = async (req, res) => {
       .populate('orderedProducts.quantity')
       .populate({
         path: 'orderedCustomizedProducts',
+        populate: [{ path: 'base' }, { path: 'flavor' }],
+
         populate: {
-          path: 'base flavor toppings.topping',
+          path: 'toppings',
+          populate: {
+            path: 'toppingType',
+            select: 'price type',
+          },
         },
       })
       .populate('store')
@@ -510,6 +516,39 @@ const getStoreOrders = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err });
+  }
+};
+const searchStoreOrders = async (req, res, next) => {
+  try {
+    const { firstName, lastName } = req.query;
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+
+    const searchCriteria = { store: storeId };
+
+    if (firstName) {
+      searchCriteria['customer.firstName'] = {
+        $regex: firstName,
+        $options: 'i',
+      };
+    }
+
+    if (lastName) {
+      searchCriteria['customer.lastName'] = {
+        $regex: lastName,
+        $options: 'i',
+      };
+    }
+
+    const orders = await OrderModel.find(searchCriteria).populate('customer');
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
 };
 
@@ -559,4 +598,5 @@ module.exports = {
   getStoreOrders,
   getStoreOrdersById,
   updateOrderStatus,
+  searchStoreOrders,
 };

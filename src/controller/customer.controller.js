@@ -24,7 +24,16 @@ const createCustomer = async (req, res) => {
     await sendActivationEmail(email, activationToken);
     res.status(201).json(customer);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    if (error.code === 11000 && error.keyPattern && error.keyValue) {
+      const { keyPattern, keyValue } = error;
+      const duplicateField = Object.keys(keyPattern)[0];
+      const duplicateValue = keyValue[duplicateField];
+      return res.status(400).json({
+        success: false,
+        message: `The ${duplicateField} '${duplicateValue}' already exists`,
+      });
+    }
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -147,7 +156,7 @@ const activateAccount = async (req, res) => {
 
     // Redirect the customer to the frontend URL
     const frontendUrl = "http://localhost:4200"; // Replace with your frontend URL
-    return res.redirect(`${frontendUrl}/account-activated`);
+    return res.redirect(`${frontendUrl}/app/account-activated`);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });

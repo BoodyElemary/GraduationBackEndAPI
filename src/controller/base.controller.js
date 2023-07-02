@@ -10,7 +10,7 @@ class baseController {
   index(req, res) {
     try {
       baseModel
-        .find({ isDeleted: false })
+        .find({ isDeleted: false }).sort({ createdAt: -1 })
         .then((bases) => {
           res.json({
             success: true,

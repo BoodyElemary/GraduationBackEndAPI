@@ -40,7 +40,7 @@ const createCustomer = async (req, res) => {
 // Get all customers
 const getAllCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find();
+    const customers = await Customer.find().sort({ createdAt: -1 });
     res.json(customers);
   } catch (error) {
     res.status(400).json({ error: error.message });

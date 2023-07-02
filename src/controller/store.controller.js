@@ -13,7 +13,7 @@ class storeController {
   index(req, res) {
     try {
       storeModel
-        .find()
+        .find().sort({ createdAt: -1 })
         .then((stores) => {
           res.json({
             success: true,

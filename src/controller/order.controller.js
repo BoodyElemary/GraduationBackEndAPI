@@ -161,7 +161,7 @@ const getAllOrders = async (req, res) => {
   const skip = (page - 1) * limit; // Skipped orders in a certain page
 
   try {
-    const orders = await OrderModel.find()
+    const orders = await OrderModel.find().sort({ createdAt: -1 })
       .populate('customer', { _id: 1 })
       .select('pickUpTime')
       .select('arrivalTime')
@@ -399,7 +399,7 @@ const getCustomerOrders = async (req, res) => {
     const userId = decodedToken.id;
     console.log('userId :', userId);
     let id = req.body.id;
-    const orders = await OrderModel.find({ customer: userId })
+    const orders = await OrderModel.find({ customer: userId }).sort({ createdAt: -1 })
       .select('pickUpTime')
       .select('arrivalTime')
       .select('note')
@@ -440,7 +440,7 @@ const getStoreOrdersById = async (req, res) => {
   const storeId = req.params.id; // Extract the store ID from req.params
 
   try {
-    const orders = await OrderModel.find({ store: storeId }) // Add the store filter
+    const orders = await OrderModel.find({ store: storeId }).sort({ createdAt: -1 }) // Add the store filter
       .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
       .select('arrivalTime')
@@ -488,7 +488,7 @@ const getStoreOrders = async (req, res) => {
 
     const count = await OrderModel.countDocuments({ store: storeId });
 
-    const orders = await OrderModel.find({ store: storeId })
+    const orders = await OrderModel.find({ store: storeId }).sort({ createdAt: -1 })
       .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
       .select('pickUpTime')
       .select('arrivalTime')

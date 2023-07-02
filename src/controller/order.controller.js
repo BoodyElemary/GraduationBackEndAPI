@@ -501,15 +501,17 @@ const getStoreOrders = async (req, res) => {
       .populate('orderedProducts.quantity')
       .populate({
         path: 'orderedCustomizedProducts',
-        populate: [{ path: 'base' }, { path: 'flavor' }],
-
-        populate: {
-          path: 'toppings',
-          populate: {
-            path: 'toppingType',
-            select: 'price type',
+        populate: [
+          { path: 'base' },
+          { path: 'flavor' },
+          {
+            path: 'toppings',
+            populate: {
+              path: 'toppingType',
+              select: 'price type',
+            },
           },
-        },
+        ],
       })
       .populate('store')
       .select('status')
@@ -526,6 +528,7 @@ const getStoreOrders = async (req, res) => {
     res.status(500).json({ error: err });
   }
 };
+
 const searchStoreOrders = async (req, res, next) => {
   try {
     const { firstName, lastName } = req.query;
@@ -579,13 +582,14 @@ const updateOrderStatus = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const order = await OrderModel.findById(orderId);
+    const order = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true },
+    );
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(404).json({ error: 'order not found' });
     }
-
-    order.status = status;
-    await order.save();
 
     res.json({ message: 'Order status updated successfully', order });
   } catch (err) {

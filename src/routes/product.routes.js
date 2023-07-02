@@ -20,8 +20,9 @@ Router.post('/', upload.single('picture'), productController.create);
 
 Router.get('/:id', productController.show);
 
-Router.put('/updateStoreProductStatus/:id', productController.editStoreStatus);
 Router.put('/:id', upload.single('picture'), productController.update);
+
+Router.put('/updateStoreProductStatus/:id', productController.editStoreStatus);
 
 Router.delete('/:id', productController.softDelete);
 

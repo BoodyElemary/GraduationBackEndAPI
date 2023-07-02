@@ -8,7 +8,7 @@ class categoryController{
 
     index(req, res){
         try{
-            categoryModel.find({isDeleted: false})
+            categoryModel.find({isDeleted: false}).sort({ createdAt: -1 })
             .then((categories)=>{
                 res.json({success: true, message: "all categories data are retrieved", data: categories})
             })
@@ -113,7 +113,7 @@ class categoryController{
 
     getProducts(req,res){
         const id = req.params.id
-        productModel.find({category: id})
+        productModel.find({category: id}).sort({ createdAt: -1 })
         .then((products)=>{
             res.json({success: true, message: "all products data are retrieved", data: products})
         })

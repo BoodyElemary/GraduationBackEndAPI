@@ -16,7 +16,7 @@ class productController {
   index(req, res) {
     try {
       productModel
-        .find({ isDeleted: false })
+        .find({ isDeleted: false }).sort({ createdAt: -1 })
         .populate('category')
         .then((products) => {
           res.json({

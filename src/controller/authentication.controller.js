@@ -102,3 +102,24 @@ exports.passwordReset = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.passwordResetSuccess = async (req, res, next) => {
+  try {
+    const { newPassword, token } = req.body;
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const userId = decodedToken.id;
+
+    // Retrieve the customer using the user ID
+    const customer = await CustomerModel.findById(userId);
+    if (!customer) return res.json({message: "Customer not found"})
+    customer.password = newPassword;
+    customer.save()
+
+    return res.json({message: "password rest successfully"})
+
+
+    }
+    catch(error){
+      res.json(500).json({message: error })
+    }
+};

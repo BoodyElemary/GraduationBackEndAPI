@@ -85,7 +85,6 @@ const createOrder = async (req, res, next) => {
 
     //
     //
-    try{
     // Connecting to payment method
     const session = await stripe.checkout.sessions.create({
       line_items: finalOrderProducts.map(

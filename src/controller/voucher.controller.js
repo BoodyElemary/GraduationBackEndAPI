@@ -11,7 +11,7 @@ class voucherController {
   index(req, res) {
     try {
       voucherModel
-        .find()
+        .find().sort({ createdAt: -1 })
         .then((vouchers) => {
           res.json({
             success: true,

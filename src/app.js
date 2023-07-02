@@ -20,6 +20,10 @@ app.use(express.json());
 app.use(cors()); // Enable CORS for all routes
 app.use(routes);
 app.use(errorMW);
+app.use((req, res, next) => {
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  next();
+});
 
 module.exports = {
   app

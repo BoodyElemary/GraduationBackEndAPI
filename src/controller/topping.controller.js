@@ -7,7 +7,7 @@ class toppingController{
     index(req, res){
         try{
 
-           toppingModel.find({isDeleted: false}).populate("toppingType")
+           toppingModel.find({isDeleted: false}).populate("toppingType").sort({ createdAt: -1 })
 
             .then((toppings)=>{
                 res.json({success: true, message: "all toppings data are retrieved", data: toppings})

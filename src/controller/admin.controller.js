@@ -13,7 +13,7 @@ const jwt = require('jsonwebtoken');
 // Get all admins
 const getAllAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find({}).populate('store');
+    const admins = await Admin.find({}).populate('store').sort({ createdAt: -1 });
     res.status(200).json(admins);
   } catch (error) {
     next(error);

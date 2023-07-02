@@ -37,6 +37,10 @@ router
   .route("/reset")
   .post(resetPasswordValidation, validationResult, authCtrl.passwordReset);
 
+router
+  .route("/resetSuccess")
+  .post(validationResult, authCtrl.passwordResetSuccess);
+
 
 router.route("/facebook").get(passport.authenticate('facebook', { session: false }, {scope: 'email'}));
 

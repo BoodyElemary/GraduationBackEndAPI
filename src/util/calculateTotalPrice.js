@@ -32,6 +32,12 @@ exports.calculateTotalPrice = async (arr) => {
             }
           );
 
+          if (product.size === "M") {
+            productPriceObject.price = productPriceObject.price * 1.2;
+          } else if (product.size === "L") {
+            productPriceObject.price = productPriceObject.price * 1.4;
+          }
+
           productsArr.push({
             name: productPriceObject.name,
             price: productPriceObject.price,
@@ -108,7 +114,6 @@ exports.calculateTotalPrice = async (arr) => {
 
           currentProductPrice = basePrice + flavorPrice + toppingsPrice;
 
-
           customProductsArr.push({
             name: currentProductName,
             price: currentProductPrice,
@@ -131,8 +136,8 @@ exports.calculateTotalPrice = async (arr) => {
 
     //
     // Calculate the voucher discount
-    let voucherCode = "";
-    let voucherID = "";
+    let voucherCode ;
+    let voucherID;
     if (arr.voucher) {
       let voucher = await VoucherModel.findOne({ code: arr.voucher });
       voucherID = voucher._id;

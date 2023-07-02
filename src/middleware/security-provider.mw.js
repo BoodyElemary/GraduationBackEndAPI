@@ -7,7 +7,7 @@ const helmet = require("helmet");
 const createError = require(path.join(__dirname, "..", "util", "error"));
 
 const corsProvider = cors({
-  origin: "*",
+  origin: "*", //To set it to front url
   methods: ["GET", "POST", "DELETE", "PUT"],
   Headers: ["Content-Type", "Authorization"],
 });

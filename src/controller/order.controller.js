@@ -87,26 +87,23 @@ const createOrder = async (req, res, next) => {
     //
     // Connecting to payment method
     const session = await stripe.checkout.sessions.create({
-      line_items: finalOrderProducts.map(
-        (product) => ({
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: product.name,
-              images: [product.picture],
-            },
-
-            unit_amount: Math.round(product.price * 100),
+      line_items: finalOrderProducts.map((product) => ({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: product.name,
+            images: [product.picture],
           },
-          quantity: product.quantity,
-        })
-      ),
+
+          unit_amount: Math.round(product.price * 100),
+        },
+        quantity: product.quantity,
+      })),
       mode: "payment",
       success_url: `http://localhost:4200/app/${order._id}/success`,
       cancel_url: `http://localhost:4200/app/${order._id}/fail`,
     });
     //io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
-
 
     // Setting Current Order Variables
     currentOrder = order;
@@ -170,13 +167,13 @@ const getAllOrders = async (req, res) => {
   const skip = (page - 1) * limit; // Skipped orders in a certain page
 
   try {
-
-    const orders = await OrderModel.find().sort({ createdAt: -1 })
-      .populate('customer', { _id: 1 })
-      .select('pickUpTime')
-      .select('arrivalTime')
-      .select('note')
-      .populate('orderedProducts.product', {
+    const orders = await OrderModel.find()
+      .sort({ createdAt: -1 })
+      .populate("customer", { _id: 1 })
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
         status: 0,
         category: 0,
         details: 0,
@@ -215,7 +212,7 @@ const getOrderById = async (req, res) => {
       .populate("arrivalTime")
       .populate("note")
       .populate("status")
-      .populate("orderedProducts.product")
+      .populate("orderedProducts.product orderedProducts.quantity")
       .populate({
         path: "orderedCustomizedProducts",
         populate: {
@@ -410,11 +407,12 @@ const getCustomerOrders = async (req, res) => {
     console.log("userId :", userId);
     let id = req.body.id;
 
-    const orders = await OrderModel.find({ customer: userId }).sort({ createdAt: -1 })
-      .select('pickUpTime')
-      .select('arrivalTime')
-      .select('note')
-      .populate('orderedProducts.product', {
+    const orders = await OrderModel.find({ customer: userId })
+      .sort({ createdAt: -1 })
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
         status: 0,
         category: 0,
         details: 0,
@@ -451,13 +449,13 @@ const getStoreOrdersById = async (req, res) => {
   const storeId = req.params.id; // Extract the store ID from req.params
 
   try {
-
-    const orders = await OrderModel.find({ store: storeId }).sort({ createdAt: -1 }) // Add the store filter
-      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
-      .select('pickUpTime')
-      .select('arrivalTime')
-      .select('note')
-      .populate('orderedProducts.product', {
+    const orders = await OrderModel.find({ store: storeId })
+      .sort({ createdAt: -1 }) // Add the store filter
+      .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
         status: 0,
         category: 0,
         details: 0,
@@ -500,29 +498,28 @@ const getStoreOrders = async (req, res) => {
 
     const count = await OrderModel.countDocuments({ store: storeId });
 
-
-    const orders = await OrderModel.find({ store: storeId }).sort({ createdAt: -1 })
-      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
-      .select('pickUpTime')
-      .select('arrivalTime')
-      .select('note')
-      .populate('orderedProducts.product', {
+    const orders = await OrderModel.find({ store: storeId })
+      .sort({ createdAt: -1 })
+      .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
+      .select("pickUpTime")
+      .select("arrivalTime")
+      .select("note")
+      .populate("orderedProducts.product", {
         status: 0,
         category: 0,
         details: 0,
       })
       .populate("orderedProducts.quantity")
       .populate({
-
-        path: 'orderedCustomizedProducts',
+        path: "orderedCustomizedProducts",
         populate: [
-          { path: 'base' },
-          { path: 'flavor' },
+          { path: "base" },
+          { path: "flavor" },
           {
-            path: 'toppings',
+            path: "toppings",
             populate: {
-              path: 'toppingType',
-              select: 'price type',
+              path: "toppingType",
+              select: "price type",
             },
           },
         ],
@@ -599,17 +596,14 @@ const updateOrderStatus = async (req, res) => {
     const order = await OrderModel.findByIdAndUpdate(
       orderId,
       { status },
-      { new: true },
+      { new: true }
     );
     if (!order) {
-
-
-      return res.status(404).json({ error: 'order not found' });
+      return res.status(404).json({ error: "order not found" });
     }
-   // order.status = status;
-   // await order.save();
-    res.json({ message: 'Order status updated successfully', order });
-
+    // order.status = status;
+    // await order.save();
+    res.json({ message: "Order status updated successfully", order });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

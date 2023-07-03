@@ -5,6 +5,7 @@ const toppingSchema = new mongoose.Schema(
     item: {
       type: String,
       required: true,
+      unique: true,
     },
 
     toppingType: {

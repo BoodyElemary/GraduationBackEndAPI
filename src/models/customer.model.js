@@ -1,11 +1,11 @@
-const path = require('path');
-const mongoose = require('mongoose');
+const path = require("path");
+const mongoose = require("mongoose");
 
 const passwordHandle = require(path.join(
   __dirname,
-  '..',
-  'util',
-  'password-handle',
+  "..",
+  "util",
+  "password-handle"
 ));
 
 const customerSchema = new mongoose.Schema(
@@ -38,15 +38,20 @@ const customerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    customerOrders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Orders" }],
     voucherList: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Voucher',
+        ref: "Voucher",
       },
     ],
     isActive: {
       type: Boolean,
       required: true,
+      default: false,
+    },
+    isBlocked: {
+      type: Boolean,
       default: false,
     },
     activationToken: {
@@ -55,12 +60,11 @@ const customerSchema = new mongoose.Schema(
     },
   },
 
-  { timestamps: true },
+  { timestamps: true }
 );
 
-
-customerSchema.pre('save', async function (next) {
-  if (this.isNew || this.isModified('password')) {
+customerSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("password")) {
     try {
       this.password = await passwordHandle.hash(this.password);
     } catch (error) {
@@ -70,4 +74,4 @@ customerSchema.pre('save', async function (next) {
   next();
 });
 
-mongoose.model('Customer', customerSchema);
+mongoose.model("Customer", customerSchema);

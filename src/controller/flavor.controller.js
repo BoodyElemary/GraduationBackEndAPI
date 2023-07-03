@@ -6,7 +6,7 @@ class flavorController{
 
     index(req, res){
         try{
-            flavorModel.find({isDeleted: false})
+            flavorModel.find({isDeleted: false}).sort({ createdAt: -1 })
             .then((flavors)=>{
                 res.json({success: true, message: "all flavors data are retrieved", data: flavors})
             })

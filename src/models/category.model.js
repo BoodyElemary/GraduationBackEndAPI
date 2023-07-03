@@ -4,9 +4,14 @@ const categorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      required: true,
+      unique: true,
     },
     picture: {
+      type: String,
+      required: true
+    },
+    description:{
       type: String,
       required: true
     },

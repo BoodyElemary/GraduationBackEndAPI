@@ -1,18 +1,19 @@
-const path = require('path')
-const mongoose = require("mongoose");
-const Admin = mongoose.model("Admin");
-const createError = require(path.join(__dirname, "..", "util", "error"));
+const path = require('path');
+const mongoose = require('mongoose');
+const Admin = mongoose.model('Admin');
+const createError = require(path.join(__dirname, '..', 'util', 'error'));
 const passwordHandle = require(path.join(
   __dirname,
-  "..",
-  "util",
-  "password-handle"
+  '..',
+  'util',
+  'password-handle',
 ));
+const jwt = require('jsonwebtoken');
 
 // Get all admins
 const getAllAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find().populate("store", { name: 1 });
+    const admins = await Admin.find({}).populate('store').sort({ createdAt: -1 });
     res.status(200).json(admins);
   } catch (error) {
     next(error);
@@ -57,7 +58,7 @@ const deleteAdmin = async (req, res, next) => {
 const getAdminData = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const admin = await Admin.findById(id).populate("store", { name: 1 });
+    const admin = await Admin.findById(id).populate('store');
     res.status(200).json(admin);
   } catch (error) {
     next(error);
@@ -67,8 +68,13 @@ const getAdminData = async (req, res, next) => {
 // Get admin data by profile path
 const getAdminDataByProfilePath = async (req, res, next) => {
   try {
-    const { user } = req;
-    const admin = await Admin.findById(user._id).populate("store", { name: 1 }); // To be stored in auth middleware
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const user = decodedToken;
+    const admin = await Admin.findById(user.id).populate('store'); // To be stored in auth middleware
     res.status(200).json(admin);
   } catch (error) {
     next(error);

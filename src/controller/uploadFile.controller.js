@@ -1,6 +1,6 @@
 const path = require('path');
 const { initializeApp } = require('firebase/app');
-const {getStorage, ref, getDownloadURL, uploadBytesResumable} = require("firebase/storage");
+const {getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject} = require("firebase/storage");
 const multer = require("multer");
 const config  = require(path.join(__dirname, "..", "firebase.config"))
 
@@ -38,5 +38,20 @@ async function uploadImageToFirebaseStorage(imageFile, distinationFolderName){
     }
 }
 
+async function deleteImageFromFirebaseStorage(downloadURL) {
+    try {
+      // Get a reference to the file using the download URL
+      const fileRef = ref(storage, downloadURL);
 
-module.exports = {uploadImageToFirebaseStorage, upload}
+      // Delete the file from Firebase Storage
+      await deleteObject(fileRef);
+
+      console.log("Deleted done");
+      return { success: true };
+    } catch (error) {
+        console.log(error);
+      return { success: false, message: error.message };
+    }
+  }
+
+module.exports = {uploadImageToFirebaseStorage, deleteImageFromFirebaseStorage, upload}

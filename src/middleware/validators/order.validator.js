@@ -9,20 +9,20 @@ const TEN_MINUTES_IN_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 const createOrderValidator = [
   // Validate the required fields in the request body
-  body("customer")
-    .exists()
-    .notEmpty()
-    .withMessage("Cannot create order without logging in !!")
-    .isMongoId()
-    .withMessage("Wrong Customer Data!!")
-    .custom(async (value) => {
-      const customer = await CustomerModel.findById(value);
-      if (!customer) {
-        throw new Error("User does not exist!!");
-      }
-      return true;
-    })
-    .withMessage("User does not exist!!"),
+  // body("customer")
+  //   .exists()
+  //   .notEmpty()
+  //   .withMessage("Cannot create order without logging in !!")
+  //   .isMongoId()
+  //   .withMessage("Wrong Customer Data!!")
+  //   .custom(async (value) => {
+  //     const customer = await CustomerModel.findById(value);
+  //     if (!customer) {
+  //       throw new Error("User does not exist!!");
+  //     }
+  //     return true;
+  //   })
+  //   .withMessage("User does not exist!!"),
   body("pickUpTime")
     .exists()
     .notEmpty()
@@ -41,8 +41,7 @@ const createOrderValidator = [
         now.getTime() + TEN_MINUTES_IN_MS + ONE_HOUR_DAY_SAVING
       );
       if (pickUpTime <= nowPlusTenMinutes) {
-        console.log(pickUpTime);
-        console.log(nowPlusTenMinutes);
+
         throw new Error("Pickup time must be at least 10 minutes from now.");
       } else if (pickUpTime > now.getTime() + TWELVE_HOURS_IN_MS) {
         throw new Error("Order must be during the same day.");
@@ -103,10 +102,9 @@ const createOrderValidator = [
   // Check for the voucher in DB
   body("voucher")
     .optional()
-    .isMongoId()
-    .withMessage("Wrong Voucher")
     .custom(async (value) => {
-      const voucher = await VoucherModel.findById(value);
+
+      const voucher = await VoucherModel.findOne({code:value});
       if (!voucher) {
         throw new Error("Voucher is invalid");
       }

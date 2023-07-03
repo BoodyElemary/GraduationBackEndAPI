@@ -1,11 +1,11 @@
-const mongoose = require("mongoose");
-const path = require("path");
+const mongoose = require('mongoose');
+const path = require('path');
 
 const passwordHandle = require(path.join(
   __dirname,
-  "..",
-  "util",
-  "password-handle"
+  '..',
+  'util',
+  'password-handle',
 ));
 
 const adminSchema = new mongoose.Schema(
@@ -23,18 +23,18 @@ const adminSchema = new mongoose.Schema(
     },
     store: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Store",
+      ref: 'Store',
     },
     token: {
-      type: String
-    }
+      type: String,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-adminSchema.index({ fullName: "text" });
+adminSchema.index({ fullName: 'text' });
 
-adminSchema.pre("save", async function (next) {
-  if (this.isNew || this.isModified("password")) {
+adminSchema.pre('save', async function (next) {
+  if (this.isNew || this.isModified('password')) {
     try {
       this.password = await passwordHandle.hash(this.password);
     } catch (error) {
@@ -43,4 +43,4 @@ adminSchema.pre("save", async function (next) {
   }
   next();
 });
-mongoose.model("Admin", adminSchema);
+mongoose.model('Admin', adminSchema);

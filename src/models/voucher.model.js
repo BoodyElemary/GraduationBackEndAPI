@@ -8,6 +8,8 @@ const voucherSchema = new mongoose.Schema(
     percentage: {
       type: Number,
       required: true,
+      min: 0.0,
+      max: 1
     },
     expireDate: {
       type: Date,
@@ -22,26 +24,16 @@ const voucherSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['applied', 'expired'],
-      default: 'applied',
+      enum: ['active', 'expired'],
+      default: 'active',
     },
     isDeleted:{
       type: Boolean,
       default:false,
-    },createdAt: {
-      type: Date,
-      default: new Date().toLocaleString("en-US", {
-        timeZone: "Indian/Maldives",
-      }),
     },
-    updatedAt: {
-      type: Date,
-      default: new Date().toLocaleString("en-US", {
-        timeZone: "Indian/Maldives",
-      }),
-    },
+
   },
-  // { timestamps: true }
+  { timestamps: true }
 );
 
 const voucherModel = mongoose.model("Voucher", voucherSchema)

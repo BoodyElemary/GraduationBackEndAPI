@@ -7,6 +7,7 @@ const Customer = mongoose.model("Customer");
 require('dotenv').config();
 const uuid = require("uuid");
 const jwt = require('../util/jwt');
+const passportLocalMongoose = require("passport-local-mongoose");
 
 function generatePassword() {
     // Define the character set to use for the password
@@ -64,6 +65,8 @@ passport.use(new GoogleStrategy({
     clientID:  process.env.GOOGLE_CLIENT_ID,
     clientSecret:  process.env.GOOGLE_CLIENT_SECRET,
     callbackURL:  process.env.GOOGLE_SECRET_URL,
+    userProfileURL: "https://www.googleapis.com/oauth2/v2/userinfo",
+    // https://accounts.google.com/o/oauth2/v2/auth
     profileFields: ['id', 'displayName', 'name', 'email', 'userinfo.phone'],
     scope: ['email', 'profile']
   },

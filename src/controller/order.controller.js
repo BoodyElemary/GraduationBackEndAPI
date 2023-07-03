@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const OrderModel = mongoose.model('Order');
 const CustomerModel = mongoose.model('Customer');
 const AdminModel = mongoose.model('Admin');
+const StoreModel = mongoose.model('Store');
 const { validationResult } = require('express-validator');
 const { calculateTotalPrice } = require('../util/calculateTotalPrice');
 const { checkForDuplicates } = require('../util/checkForProductsDuplication');
@@ -606,6 +607,202 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+const getStoreInsights = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(
+      token.replace('Bearer ', ''),
+      process.env.SECRET_KEY,
+    );
+    const storeId = decodedToken.storeId;
+
+    // Get the number of orders
+    const orderCount = await OrderModel.countDocuments({ store: storeId });
+
+    // Get the total revenue
+    const totalRevenue = await OrderModel.aggregate([
+      {
+        $match: {
+          store: new mongoose.Types.ObjectId(storeId),
+          status: 'delivered',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $toDouble: '$totalPrice' } },
+          monthlyRevenue: {
+            $push: {
+              month: { $month: '$createdAt' },
+              revenue: { $toDouble: '$totalPrice' },
+            },
+          },
+        },
+      },
+    ]);
+
+    // Calculate percentage of revenue for each month
+    const monthlyRevenue =
+      totalRevenue.length > 0 ? totalRevenue[0].monthlyRevenue : [];
+    const monthlyRevenuePercentage = new Array(12).fill(0);
+
+    monthlyRevenue.forEach((record) => {
+      const month = record.month;
+      const revenue = record.revenue;
+      monthlyRevenuePercentage[month - 1] += revenue;
+    });
+
+    const totalAnnualRevenue =
+      totalRevenue.length > 0 ? totalRevenue[0].total : 0;
+    const percentageData = [];
+
+    for (let i = 0; i < monthlyRevenuePercentage.length; i++) {
+      const monthName = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ][i];
+      const percentage =
+        (monthlyRevenuePercentage[i] / totalAnnualRevenue) * 100;
+      percentageData.push({
+        month: monthName,
+        revenue: monthlyRevenuePercentage[i],
+        percentage: percentage.toFixed(2),
+      });
+    }
+
+    // Get the number of customers
+    const customerCount = await OrderModel.distinct('customer', {
+      store: new mongoose.Types.ObjectId(storeId),
+    }).countDocuments();
+
+    // Format the insights into a response object
+    const insights = {
+      orderCount,
+      totalRevenue: totalAnnualRevenue,
+      monthlyRevenue: percentageData,
+      customerCount,
+    };
+
+    res.json(insights);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+const getallInsights = async (req, res) => {
+  try {
+    // Get the total order count
+    const orderCount = await OrderModel.countDocuments();
+
+    // Get the total revenue
+    const totalRevenue = await OrderModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $toDouble: '$totalPrice' } },
+        },
+      },
+    ]);
+
+    const totalAnnualRevenue =
+      totalRevenue.length > 0 ? totalRevenue[0].total : 0;
+
+    // Get the monthly revenue for each store
+    const monthlyRevenue = await OrderModel.aggregate([
+      {
+        $match: {
+          status: 'delivered',
+        },
+      },
+      {
+        $group: {
+          _id: '$store',
+          total: { $sum: { $toDouble: '$totalPrice' } },
+          monthlyRevenue: {
+            $push: {
+              month: { $month: '$createdAt' },
+              revenue: { $toDouble: '$totalPrice' },
+            },
+          },
+        },
+      },
+    ]);
+
+    // Calculate the percentage of revenue for each month for each store
+    const percentageData = [];
+    monthlyRevenue.forEach((store) => {
+      const storeName = store._id; // Assuming the store name is stored in the _id field of the StoreModel
+      const storeMonthlyRevenue = store.monthlyRevenue;
+
+      const monthlyRevenuePercentage = new Array(12).fill(0);
+
+      storeMonthlyRevenue.forEach((record) => {
+        const month = record.month;
+        const revenue = record.revenue;
+        monthlyRevenuePercentage[month - 1] += revenue;
+      });
+
+      const storePercentageData = [];
+      for (let i = 0; i < monthlyRevenuePercentage.length; i++) {
+        const monthName = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ][i];
+        const percentage =
+          (monthlyRevenuePercentage[i] / totalAnnualRevenue) * 100;
+        storePercentageData.push({
+          month: monthName,
+          revenue: monthlyRevenuePercentage[i],
+          percentage: percentage.toFixed(2),
+        });
+      }
+
+      percentageData.push({
+        store: storeName,
+        monthlyRevenue: storePercentageData,
+      });
+    });
+
+    // Get the total number of customers
+    const customerCount = await OrderModel.distinct(
+      'customer',
+    ).countDocuments();
+
+    // Format the insights into a response object
+    const insights = {
+      orderCount,
+      totalRevenue: totalAnnualRevenue,
+      monthlyRevenue: percentageData,
+      customerCount,
+    };
+
+    res.json(insights);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -619,4 +816,6 @@ module.exports = {
   getStoreOrdersById,
   updateOrderStatus,
   searchStoreOrders,
+  getStoreInsights,
+  getallInsights,
 };

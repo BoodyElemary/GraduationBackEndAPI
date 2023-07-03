@@ -586,15 +586,20 @@ const updateOrderStatus = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const order = await OrderModel.findById(orderId);
-    if (!order) {
+    const updatedOrder = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true },
+    );
+
+    if (!updatedOrder) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    order.status = status;
-    await order.save();
-
-    res.json({ message: 'Order status updated successfully', order });
+    res.json({
+      message: 'Order status updated successfully',
+      order: updatedOrder,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

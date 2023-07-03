@@ -3,13 +3,13 @@ const voucherSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: true
+      required: true,
     },
     percentage: {
       type: Number,
       required: true,
       min: 0.0,
-      max: 1
+      max: 1,
     },
     expireDate: {
       type: Date,
@@ -18,23 +18,21 @@ const voucherSchema = new mongoose.Schema(
         validator: function (value) {
           return value > Date.now();
         },
-        message: 'Voucher Expired',
+        message: "Voucher Expired",
       },
-
     },
     status: {
       type: String,
-      enum: ['active', 'expired'],
-      default: 'active',
+      enum: ["active", "expired"],
+      default: "active",
     },
-    isDeleted:{
+    isDeleted: {
       type: Boolean,
-      default:false,
+      default: false,
     },
-
   },
   { timestamps: true }
 );
 
-const voucherModel = mongoose.model("Voucher", voucherSchema)
-module.exports = voucherModel
+const voucherModel = mongoose.model("Voucher", voucherSchema);
+module.exports = voucherModel;

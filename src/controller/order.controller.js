@@ -81,7 +81,7 @@ const createOrder = async (req, res, next) => {
     const session = await stripe.checkout.sessions.create({
       line_items: finalOrderProducts.map((product) => ({
         price_data: {
-          currency: "usd",
+          currency: 'usd',
           product_data: {
             name: product.name,
             images: [product.picture],
@@ -90,7 +90,7 @@ const createOrder = async (req, res, next) => {
         },
         quantity: product.quantity,
       })),
-      mode: "payment",
+      mode: 'payment',
       success_url: `http://localhost:4200/app/${order._id}/success`,
       cancel_url: `http://localhost:4200/app/${order._id}/fail`,
     });
@@ -157,11 +157,11 @@ const getAllOrders = async (req, res) => {
     const orders = await OrderModel.find()
 
       .sort({ createdAt: -1 })
-      .populate("customer", { _id: 1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .populate('customer', { _id: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
@@ -195,12 +195,12 @@ const getAllOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const order = await OrderModel.findById(req.params.id)
-      .populate("customer", { _id: 1 })
-      .populate("pickUpTime")
-      .populate("arrivalTime")
-      .populate("note")
-      .populate("status")
-      .populate("orderedProducts.product orderedProducts.quantity")
+      .populate('customer', { _id: 1 })
+      .populate('pickUpTime')
+      .populate('arrivalTime')
+      .populate('note')
+      .populate('status')
+      .populate('orderedProducts.product orderedProducts.quantity')
       .populate({
         path: 'orderedCustomizedProducts',
         populate: {
@@ -211,10 +211,10 @@ const getOrderById = async (req, res) => {
         path: 'orderedCustomizedProducts',
         populate: {
           path: 'toppings',
-          populate:{
-            path:'toppingType',
-            select:'price type' 
-          }
+          populate: {
+            path: 'toppingType',
+            select: 'price type',
+          },
         },
       })
       .populate('store')
@@ -407,10 +407,10 @@ const getCustomerOrders = async (req, res) => {
 
     const orders = await OrderModel.find({ customer: userId })
       .sort({ createdAt: -1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
@@ -449,11 +449,11 @@ const getStoreOrdersById = async (req, res) => {
   try {
     const orders = await OrderModel.find({ store: storeId })
       .sort({ createdAt: -1 }) // Add the store filter
-      .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
@@ -498,29 +498,29 @@ const getStoreOrders = async (req, res) => {
 
     const orders = await OrderModel.find({ store: storeId })
       .sort({ createdAt: -1 })
-      .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
-      .populate("orderedProducts.product", {
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+      .select('pickUpTime')
+      .select('arrivalTime')
+      .select('note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
       })
       .populate('orderedProducts.quantity')
       .populate({
-        path: "orderedCustomizedProducts",
+        path: 'orderedCustomizedProducts',
         populate: [
-          { path: "base" },
-          { path: "flavor" },
+          { path: 'base' },
+          { path: 'flavor' },
           {
-            path: "toppings",
+            path: 'toppings',
             populate: {
-              path: "toppingType",
-              select: "price type",
+              path: 'toppingType',
+              select: 'price type',
             },
           },
-        },
+        ],
       })
       .populate('store')
       .select('status')
@@ -590,7 +590,6 @@ const updateOrderStatus = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-
     const order = await OrderModel.findById(orderId);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
@@ -600,7 +599,6 @@ const updateOrderStatus = async (req, res) => {
     await order.save();
 
     res.json({ message: 'Order status updated successfully', order });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

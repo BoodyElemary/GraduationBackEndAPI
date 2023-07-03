@@ -16,7 +16,8 @@ class productController {
   index(req, res) {
     try {
       productModel
-        .find({ isDeleted: false }).sort({ createdAt: -1 })
+        .find({ isDeleted: false })
+        .sort({ createdAt: -1 })
         .populate('category')
         .then((products) => {
           res.json({
@@ -97,7 +98,6 @@ class productController {
           req.file,
           'products',
         );
-        console.log(response);
 
         if (!response.success) {
           return res
@@ -178,55 +178,6 @@ class productController {
 
   async editStoreStatus(req, res) {
     try {
-      const token = req.headers.authorization;
-      // Verify the token and extract the id
-      const decodedToken = jwt.verify(
-        token.replace('Bearer ', ''),
-        process.env.SECRET_KEY,
-      );
-      console.log(decodedToken);
-      const id = req.params.id;
-      let entryData = req.body;
-      let product = await productModel.findOne({ _id: id });
-      if (!product) {
-        return res
-          .status(404)
-          .json({ success: false, message: "product doesn't exist" });
-      }
-      if (req.file) {
-        const response = await uploadImageToFirebaseStorage(
-          req.file,
-          'products',
-        );
-        console.log(response);
-
-        if (!response.success) {
-          return res
-            .status(500)
-            .json({ success: false, message: response.message });
-        }
-        entryData = { ...req.body, picture: response.downloadURL };
-        await deleteImageFromFirebaseStorage(product.picture);
-      }
-      productModel
-        .findOneAndUpdate({ _id: id }, { $set: entryData }, { new: true })
-        .then((updatedProduct) => {
-          res.json({
-            success: true,
-            data: updatedProduct,
-            message: 'product status has been Updated successfully',
-          });
-        })
-        .catch((error) =>
-          res.status(500).json({ success: false, message: error.errors }),
-        );
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.errors });
-    }
-  }
-
-  async editStoreStatus(req, res) {
-    try {
       const id = req.params.id;
 
       // Verify and decode the token to get the storeId
@@ -236,8 +187,7 @@ class productController {
         token.replace('Bearer ', ''),
         process.env.SECRET_KEY,
       );
-      const { storeId } = '6490f4535c402adda22deb4b';
-
+      const storeId = decoded.storeId;
       const { availability } = req.body;
 
       let product = await productModel.findOne({ _id: id });

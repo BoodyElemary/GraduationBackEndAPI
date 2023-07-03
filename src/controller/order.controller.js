@@ -11,7 +11,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // const endpointSecret =
 //   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 const { error, Console } = require('console');
-const { io } = require('../socket');
+
 
 // Used Variables
 let currentOrder;
@@ -92,10 +92,9 @@ const createOrder = async (req, res, next) => {
         quantity: product.quantity,
       })),
       mode: 'payment',
-      success_url: `http://localhost:4200/app/${order._id}/success`,
+      success_url: `http://localhost:4200/app/${order._id}/success?message=success&user=${order.customer}&store=${order.store}&pickUpTime=${order.pickUpTime}`,
       cancel_url: `http://localhost:4200/app/${order._id}/fail`,
     });
-    //io.to(admin._id).emit('new-order', { message: 'A new order has been placed', data: order });
 
     // Setting Current Order Variables
     currentOrder = order;

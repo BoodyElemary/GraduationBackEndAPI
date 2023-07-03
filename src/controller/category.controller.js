@@ -189,6 +189,7 @@ class categoryController {
   }
 
   getProducts(req, res) {
+    try{
     const id = req.params.id;
     productModel
       .find({ category: id, isDeleted: false })
@@ -203,6 +204,10 @@ class categoryController {
       .catch((error) =>
         res.status(500).json({ success: false, message: error.errors }),
       );
+    }
+    catch (error){
+     res.status(500).json({ success: false, message: error }),
+    }
   }
 }
 

@@ -87,39 +87,37 @@ exports.passwordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
     const customer = await CustomerModel.findOne({ email: email });
-    if (!customer) next(createError('Email is wrong.', 401));
-    if (!customer.isActive)
-      next(createError('Activate your email please.', 401));
+    if (!customer) return res.status(400).json({message: "Email is wrong."})
+    if (!customer.isActive) return res.status(400).json({message: "Activate your email please."})
     const token = jwt.create({ id: customer._id, role: 'customer' });
-    const resetURL = process.env.FRONT_URL + '/reset/?token=' + token;
+    const resetURL = process.env.FRONT_URL + '/app/reset-password/?token=' + token;
     const error = await sendResetEmail(email, resetURL);
-    error
-      ? next(error)
-      : res.status(200).json({
-          message: 'success',
-        });
-  } catch (err) {
-    next(err);
+    if (error) return res.status(500).json({message: error})
+    else return res.status(200).json({message: 'success'});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message: error})
   }
 };
 
 exports.passwordResetSuccess = async (req, res, next) => {
   try {
-    const { newPassword, token } = req.body;
+    let { newPassword, token } = req.body;
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    const userId = decodedToken.id;
+    const userId = decodedToken?.id;
 
+    newPassword = await passwordHandle.hash(newPassword);
     // Retrieve the customer using the user ID
-    const customer = await CustomerModel.findById(userId);
-    if (!customer) return res.json({message: "Customer not found"})
-    customer.password = newPassword;
-    customer.save()
+    await CustomerModel.findByIdAndUpdate(userId, {$set: {password: newPassword}})
+    .then((customer)=>{
+      if (!customer) return res.json({message: "Customer not found"})
+      return res.json({message: "password reset successfully"})
+    })
+    .catch((error)=>{ console.log(error); return res.status(500).json({message: error})})
 
-    return res.json({message: "password rest successfully"})
+  }
+  catch(error){
+    return res.status(500).json({message: error})
+  }
 
-
-    }
-    catch(error){
-      res.json(500).json({message: error })
-    }
-};
+}

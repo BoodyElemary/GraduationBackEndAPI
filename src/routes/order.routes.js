@@ -26,6 +26,8 @@ const {
   getStoreOrdersById,
   updateOrderStatus,
   searchStoreOrders,
+  getStoreInsights,
+  getallInsights,
 } = require(path.join(__dirname, '..', 'controller', 'order.controller'));
 
 const endpointSecret =
@@ -34,6 +36,7 @@ const endpointSecret =
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 Router.get('/', getAllOrders);
+Router.get('/insights', getallInsights);
 
 Router.get('/sotresOrders', getStoreOrders);
 
@@ -55,5 +58,7 @@ Router.put('/:orderId/status', updateOrderStatus);
 
 Router.delete('/:id', deleteOrderByAdmin);
 Router.get('/storeOrders/search/', searchStoreOrders);
+
+Router.get('/store/insights', getStoreInsights);
 
 module.exports = Router;

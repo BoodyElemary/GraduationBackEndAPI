@@ -113,7 +113,7 @@ class categoryController{
 
     getProducts(req,res){
         const id = req.params.id
-        productModel.find({category: id}).sort({ createdAt: -1 })
+        productModel.find({category: id, isDeleted: false}).sort({ createdAt: -1 })
         .then((products)=>{
             res.json({success: true, message: "all products data are retrieved", data: products})
         })

@@ -15,7 +15,6 @@ io.on('connection', (socket) => {
   const { id } = socket;
   connectedClients.set(id, socket);
   const mongodbid = socket.handshake.headers['mongodbid'];
-  // console.log('MongoDB ID:', mongodbid);
   if (mongodbid) {
     clientSockets.set(mongodbid, socket);
     console.log(`MongoDB ID ${mongodbid} mapped to socket ID ${id}`);
@@ -24,7 +23,6 @@ io.on('connection', (socket) => {
   }
 
   socket.on('create-order', (data) => {
-    console.log(data);
     const targetMongoDBId = data.store; // Assuming targetMongoDBId is present in the data received from the request
     const targetSocket = clientSockets.get(targetMongoDBId);
 

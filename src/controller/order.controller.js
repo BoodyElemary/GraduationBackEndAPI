@@ -489,7 +489,7 @@ const getStoreOrders = async (req, res) => {
     console.log(token);
     const decodedToken = jwt.verify(
       token.replace('Bearer ', ''),
-      process.env.SECRET_KEY,
+      process.env.SECRET_KEY
     );
     const storeId = decodedToken.storeId;
     console.log('storeId:', storeId);
@@ -499,9 +499,7 @@ const getStoreOrders = async (req, res) => {
     const orders = await OrderModel.find({ store: storeId })
       .sort({ createdAt: -1 })
       .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
-      .select("pickUpTime")
-      .select("arrivalTime")
-      .select("note")
+      .select("pickUpTime arrivalTime note")
       .populate("orderedProducts.product", {
         status: 0,
         category: 0,
@@ -520,14 +518,10 @@ const getStoreOrders = async (req, res) => {
               select: "price type",
             },
           },
-        },
+        ],
       })
       .populate('store')
-      .select('status')
-      .select('subTotal')
-      .select('discount')
-      .select('totalPrice')
-      .select('createdAt')
+      .select('status subTotal discount totalPrice createdAt')
       .skip(skip)
       .limit(limit);
 
@@ -537,6 +531,8 @@ const getStoreOrders = async (req, res) => {
     res.status(500).json({ error: err });
   }
 };
+
+
 const searchStoreOrders = async (req, res, next) => {
   try {
     const { firstName, lastName } = req.query;

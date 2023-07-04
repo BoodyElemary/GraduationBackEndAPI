@@ -12,7 +12,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 //   "whsec_2908c30ff34b061a57104853f5123ad0fad4d4afe0eb15828b5dc41a26ff251c";
 const { error, Console } = require('console');
 
-
 // Used Variables
 let currentOrder;
 let currentUserId;
@@ -439,45 +438,87 @@ const getCustomerOrders = async (req, res) => {
   }
 };
 const getStoreOrdersById = async (req, res) => {
-  // For Pagination
-  const page = parseInt(req.query.page) || 1; // Page number, default to 1
-  const limit = parseInt(req.query.limit) || 10; // Limit of retrieved orders, default to 10
-  const skip = (page - 1) * limit; // Skipped orders in a certain page
-
-  const storeId = req.params.id; // Extract the store ID from req.params
-
   try {
-    const orders = await OrderModel.find({ store: storeId })
-      .sort({ createdAt: -1 }) // Add the store filter
-      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
-      .select('pickUpTime')
-      .select('arrivalTime')
-      .select('note')
-      .populate('orderedProducts.product', {
-        status: 0,
-        category: 0,
-        details: 0,
-      })
-      .populate('orderedProducts.quantity')
-      .populate({
-        path: 'orderedCustomizedProducts',
-        populate: {
-          path: 'base flavor toppings.topping',
-        },
-      })
-      .populate('store')
-      .select('status')
-      .select('subTotal')
-      .select('discount')
-      .select('totalPrice')
-      .select('createdAt')
-      .skip(skip)
-      .limit(limit); // Add skip and limit to the query
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
 
-    res.json(orders);
+    const storeId = req.params.id;
+    console.log('storeId:', storeId);
+
+    let query = {};
+
+    if (storeId !== 'all') {
+      query.store = storeId;
+    }
+
+    let count, orders;
+
+    if (storeId === 'all') {
+      count = await OrderModel.countDocuments();
+      orders = await OrderModel.find()
+        .sort({ createdAt: -1 })
+        .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+        .select('pickUpTime arrivalTime note')
+        .populate('orderedProducts.product', {
+          status: 0,
+          category: 0,
+          details: 0,
+        })
+        .populate('orderedProducts.quantity')
+        .populate({
+          path: 'orderedCustomizedProducts',
+          populate: [
+            { path: 'base' },
+            { path: 'flavor' },
+            {
+              path: 'toppings',
+              populate: {
+                path: 'toppingType',
+                select: 'price type',
+              },
+            },
+          ],
+        })
+        .populate('store')
+        .select('status subTotal discount totalPrice createdAt')
+        .skip(skip)
+        .limit(limit);
+    } else {
+      count = await OrderModel.countDocuments(query);
+      orders = await OrderModel.find(query)
+        .sort({ createdAt: -1 })
+        .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+        .select('pickUpTime arrivalTime note')
+        .populate('orderedProducts.product', {
+          status: 0,
+          category: 0,
+          details: 0,
+        })
+        .populate('orderedProducts.quantity')
+        .populate({
+          path: 'orderedCustomizedProducts',
+          populate: [
+            { path: 'base' },
+            { path: 'flavor' },
+            {
+              path: 'toppings',
+              populate: {
+                path: 'toppingType',
+                select: 'price type',
+              },
+            },
+          ],
+        })
+        .populate('store')
+        .select('status subTotal discount totalPrice createdAt')
+        .skip(skip)
+        .limit(limit);
+    }
+
+    res.json({ orders, total: count });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.log(err);
+    res.status(500).json({ error: err });
   }
 };
 
@@ -489,7 +530,7 @@ const getStoreOrders = async (req, res) => {
     console.log(token);
     const decodedToken = jwt.verify(
       token.replace('Bearer ', ''),
-      process.env.SECRET_KEY
+      process.env.SECRET_KEY,
     );
     const storeId = decodedToken.storeId;
     console.log('storeId:', storeId);
@@ -498,9 +539,9 @@ const getStoreOrders = async (req, res) => {
 
     const orders = await OrderModel.find({ store: storeId })
       .sort({ createdAt: -1 })
-      .populate("customer", { _id: 1, firstName: 1, lastName: 1 })
-      .select("pickUpTime arrivalTime note")
-      .populate("orderedProducts.product", {
+      .populate('customer', { _id: 1, firstName: 1, lastName: 1 })
+      .select('pickUpTime arrivalTime note')
+      .populate('orderedProducts.product', {
         status: 0,
         category: 0,
         details: 0,
@@ -531,7 +572,6 @@ const getStoreOrders = async (req, res) => {
     res.status(500).json({ error: err });
   }
 };
-
 
 const searchStoreOrders = async (req, res, next) => {
   try {

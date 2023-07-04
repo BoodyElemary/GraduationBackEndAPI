@@ -1,13 +1,11 @@
 const passport = require('passport');
 const facbookStrategy = require('passport-facebook').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const express = require('express');
 const mongoose = require("mongoose");
 const Customer = mongoose.model("Customer");
 require('dotenv').config();
 const uuid = require("uuid");
 const jwt = require('../util/jwt');
-const passportLocalMongoose = require("passport-local-mongoose");
 
 function generatePassword() {
     // Define the character set to use for the password
@@ -96,7 +94,7 @@ passport.use(new GoogleStrategy({
         return cb(null, {token, customer: newCustomer, message: 'Login Successfully'});
     }
 }
-  ));
+));
 
 
 module.exports = {passport}

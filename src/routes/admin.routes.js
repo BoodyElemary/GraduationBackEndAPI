@@ -41,12 +41,7 @@ router
     validationResult,
     adminCtrl.addNewAdmin
   )
-  .put(
-    isSuperAdmin,
-    updateAdminValidation,
-    validationResult,
-    adminCtrl.updateAdmin
-  );
+  .put(isSuperAdmin, validationResult, adminCtrl.updateAdmin);
 router
   .route("/id/:id")
   .all(isSuperAdmin, paramIdValidation, validationResult)

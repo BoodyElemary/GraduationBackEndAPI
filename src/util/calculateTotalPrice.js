@@ -146,9 +146,11 @@ exports.calculateTotalPrice = async (arr) => {
       voucherCode = voucher.code;
       if (!voucher) {
         return;
-      } else if (voucher.expireDate > Date.now()) {
-        throw new Error("Customized product Doesn't Exist");
-      } else {
+      }
+      //  else if (voucher.expireDate > Date.now()) {
+      //   throw new Error("Voucher is expired");
+      // }
+       else {
         discountPercentage = voucher.percentage;
       }
     } else {

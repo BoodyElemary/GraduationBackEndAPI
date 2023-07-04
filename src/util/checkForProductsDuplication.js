@@ -5,8 +5,10 @@ exports.checkForDuplicates = (orderedProducts, orderedCustomizedProducts) => {
   const customizedProductIds = new Set();
   let hasDuplicates = false;
 
+  
   if (orderedProducts) {
     for (let product of orderedProducts) {
+      console.log(product);
       if (productIds.has(product.product)) {
         hasDuplicates = true;
         break;

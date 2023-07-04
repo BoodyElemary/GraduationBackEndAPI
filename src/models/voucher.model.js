@@ -23,8 +23,8 @@ const voucherSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "expired"],
-      default: "active",
+      enum: ["applied", "expired"],
+      default: "applied",
     },
     isDeleted: {
       type: Boolean,
